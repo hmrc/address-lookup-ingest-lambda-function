@@ -1,7 +1,7 @@
 
-# address-lookup-db-schema
+# address-lookup-ingest-lambda
 
-This is a placeholder README.md for a new repository
+This lambda pre-processes the downloaded files and loads them into the database.
 
 ### License
 
