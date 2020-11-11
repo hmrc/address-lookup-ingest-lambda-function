@@ -1,10 +1,12 @@
 TARGET_PATH := dist/
 ARTIFACT := address-lookup-ingest-lambda-function
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 build:
 	rm -rf $(TARGET_PATH)
 	mkdir $(TARGET_PATH)
-	zip -r9 dist/${ARTIFACT}.zip . --exclude "*dist/*" --exclude "*.git/*" --exclude "*.idea/*"
+	zip dist/${ARTIFACT}.zip *.py
+	cd venv/lib/python3.8/site-packages && zip -r ${ROOT_DIR}/dist/${ARTIFACT}.zip ./*
 	cd $(TARGET_PATH); openssl dgst -sha256 -binary $(ARTIFACT).zip | openssl enc -base64 > $(ARTIFACT).base64sha256
 
 push-s3:
