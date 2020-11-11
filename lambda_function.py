@@ -1,9 +1,10 @@
 from os import listdir, chdir, path
 from time import time
 from split_abp_files import createCSV
+import psycopg2
+from credstash import getSecret
 
-
-def handler(event, context):
+def process_handler(event, context):
     root_dir = "/mnt/efs"
     process_files(root_dir + "/abp")
     process_files(root_dir + "/abi")
@@ -37,5 +38,25 @@ def process_files(baseDir):
     return 0
 
 
+def ingest_handler(event, context):
+    print("Ingesting ...")
+
+    password = getSecret('address_lookup_rds_password',context={'role': 'address_lookup_file_download'})
+
+    conn = psycopg2.connect(
+        host="localhost",
+        port=5432,
+        database="postgres",
+        user="root",
+        password=password)
+
+    cur = conn.cursor()
+    cur.execute('SELECT version()')
+    db_version = cur.fetchone()
+    cur.close()
+
+    print("DB Version retrieved as {}".format(db_version))
+
+
 if __name__ == "__main__":
-    handler(None, None)
+    ingest_handler(None, None)
