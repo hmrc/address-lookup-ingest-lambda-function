@@ -44,7 +44,7 @@ def ingest_handler(event, context):
     password = getSecret('address_lookup_rds_password',context={'role': 'address_lookup_file_download'})
 
     conn = psycopg2.connect(
-        host="localhost",
+        host="addresslookup.cobnrd9qoh0u.eu-west-2.rds.amazonaws.com",
         port=5432,
         database="postgres",
         user="root",
