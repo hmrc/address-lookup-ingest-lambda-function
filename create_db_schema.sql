@@ -1,5 +1,5 @@
 --BLPU
-CREATE TABLE abp_blpu (
+CREATE TABLE __schema__.abp_blpu (
                           RECORD_IDENTIFIER SMALLINT,
                           CHANGE_TYPE CHARACTER VARYING(1),
                           PRO_ORDER BIGINT,
@@ -25,7 +25,7 @@ CREATE TABLE abp_blpu (
 );
 
 --Classification
-CREATE TABLE abp_classification (
+CREATE TABLE __schema__.abp_classification (
                                     RECORD_IDENTIFIER SMALLINT,
                                     CHANGE_TYPE CHARACTER VARYING(1),
                                     PRO_ORDER BIGINT,
@@ -41,7 +41,7 @@ CREATE TABLE abp_classification (
 );
 
 --Application Cross reference table
-CREATE TABLE abp_crossref (
+CREATE TABLE __schema__.abp_crossref (
                               RECORD_IDENTIFIER SMALLINT,
                               CHANGE_TYPE CHARACTER VARYING(1),
                               PRO_ORDER BIGINT,
@@ -57,7 +57,7 @@ CREATE TABLE abp_crossref (
 );
 
 --Delivery Point Address
-CREATE TABLE abp_delivery_point (
+CREATE TABLE __schema__.abp_delivery_point (
                                     RECORD_IDENTIFIER SMALLINT,
                                     CHANGE_TYPE CHARACTER VARYING(1),
                                     PRO_ORDER BIGINT,
@@ -90,7 +90,7 @@ CREATE TABLE abp_delivery_point (
 );
 
 --LPI
-CREATE TABLE abp_lpi (
+CREATE TABLE __schema__.abp_lpi (
                          RECORD_IDENTIFIER SMALLINT,
                          CHANGE_TYPE CHARACTER VARYING(1),
                          PRO_ORDER BIGINT,
@@ -120,7 +120,7 @@ CREATE TABLE abp_lpi (
 );
 
 --Organisation
-CREATE TABLE abp_organisation (
+CREATE TABLE __schema__.abp_organisation (
                                   RECORD_IDENTIFIER SMALLINT,
                                   CHANGE_TYPE CHARACTER VARYING(1),
                                   PRO_ORDER BIGINT,
@@ -135,7 +135,7 @@ CREATE TABLE abp_organisation (
 );
 
 -- --Street
--- CREATE TABLE abp_street (
+-- CREATE TABLE __schema__.abp_street (
 --                             RECORD_IDENTIFIER SMALLINT,
 --                             CHANGE_TYPE CHARACTER VARYING(1),
 --                             PRO_ORDER BIGINT,
@@ -158,7 +158,7 @@ CREATE TABLE abp_organisation (
 --                             STREET_TOLERANCE SMALLINT
 -- );
 
-CREATE TABLE abp_street
+CREATE TABLE __schema__.abp_street
 (
     RECORD_IDENTIFIER smallint,
     CHANGE_TYPE character varying(1),
@@ -187,7 +187,7 @@ CREATE TABLE abp_street
 );
 
 --Street Descriptor
-CREATE TABLE abp_street_descriptor (
+CREATE TABLE __schema__.abp_street_descriptor (
                                        RECORD_IDENTIFIER SMALLINT,
                                        CHANGE_TYPE CHARACTER VARYING(1),
                                        PRO_ORDER BIGINT,
@@ -204,7 +204,7 @@ CREATE TABLE abp_street_descriptor (
 );
 
 --Successor Records
-CREATE TABLE abp_successor (
+CREATE TABLE __schema__.abp_successor (
                                RECORD_IDENTIFIER SMALLINT,
                                CHANGE_TYPE CHARACTER VARYING(1),
                                PRO_ORDER BIGINT,
