@@ -42,7 +42,7 @@ import zipfile
 import csv
 import sys
 import os
-import StringIO
+import io
 import time
 from time import strftime
 
@@ -85,13 +85,16 @@ headings99 = ["RECORD_IDENTIFIER", "NEXT_VOLUME_NUMBER", "RECORD_COUNT", "ENTRY_
 
 
 def createCSV(input_directory_path):
-    print 'This program will split OS AddressBase Premium Zip CSV or extracted CSV files by record identifier into new CSV files'
+    print(
+        'This program will split OS AddressBase Premium Zip CSV or extracted CSV files by record identifier into new '
+        'CSV files')
     starttime = time.time()
 
-    # Rather than using arguments the program asks the user to input the path to the folder of OS AddressBase Premium files
+    # Rather than using arguments the program asks the user to input the path to the folder of OS AddressBase Premium
+    # files
     if input_directory_path is None:
-        print 'Please type in the full path to the directory of OS AddressBase zip files:'
-        directorypath = raw_input('Directory Path: ')
+        print('Please type in the full path to the directory of OS AddressBase zip files:')
+        directorypath = input('Directory Path: ')
     else:
         directorypath = input_directory_path
 
@@ -101,10 +104,10 @@ def createCSV(input_directory_path):
     # An emtpy array and counter used to store and count the number of Zip files the program finds
     zipfileList = []
     zipfileCount = 0
-    # The following code walks the directory path that the user input earlier and searches for either CSV files or Zip files
-    # It will initially see if AddressBasePremium is in the filename if not it will then check the first value of the file against
-    # the record types above. Obviously is there is a CSV in the folder that has one of these record types as a first value
-    # it will also be included.
+    # The following code walks the directory path that the user input earlier and searches for either CSV files or
+    # Zip files It will initially see if AddressBasePremium is in the filename if not it will then check the first
+    # value of the file against the record types above. Obviously is there is a CSV in the folder that has one of
+    # these record types as a first value it will also be included.
     for dirname, dirnames, filenames in os.walk(directorypath):
         for filename in filenames:
             if filename.endswith(".csv"):
@@ -120,29 +123,30 @@ def createCSV(input_directory_path):
     # The following section makes sure that it is dealing with the correct files, either CSV or Zip but not both types
     try:
         if csvfileCount > 0 and zipfileCount > 0:
-            print "Program has found both OS AddressBase Premium CSV  and ZIP files."
-            print "Please tidy up the folder of files and try again"
+            print("Program has found both OS AddressBase Premium CSV  and ZIP files.")
+            print("Please tidy up the folder of files and try again")
             time.sleep(5)
             sys.exit()
         else:
             pass
         if csvfileCount > 0:
-            print "Program has found %s OS AddressBase Premium CSV Files" % csvfileCount
+            print("Program has found %s OS AddressBase Premium CSV Files" % csvfileCount)
         else:
             pass
         if zipfileCount > 0:
-            print "Program has found %s OS AddressBase Premium Zipped CSV Files" % zipfileCount
+            print("Program has found %s OS AddressBase Premium Zipped CSV Files" % zipfileCount)
         else:
             pass
 
         if csvfileCount == 0 and zipfileCount == 0:
-            print "Program could not find any OS AddressBase Premium files and will now exit"
+            print("Program could not find any OS AddressBase Premium files and will now exit")
             time.sleep(5)
             sys.exit()
     finally:
         pass
 
-    # Create the ID10_Header_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID10_Header_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a
+    # fresh one
     if os.path.isfile('ID10_Header_Records.csv'):
         os.remove('ID10_Header_Records.csv')
         header_10 = open('ID10_Header_Records.csv', 'a')
@@ -162,7 +166,8 @@ def createCSV(input_directory_path):
         street_11 = open('ID11_Street_Records.csv', 'a')
         write11 = csv.writer(street_11, delimiter=',', quotechar='"', lineterminator='\n')
         write11.writerow(headings11)
-    # Create the ID15_StreetDesc_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID15_StreetDesc_Records.csv file, it checks to see if it exists first, if so deletes it,
+    # then creates a fresh one
     if os.path.isfile('ID15_StreetDesc_Records.csv'):
         os.remove('ID15_StreetDesc_Records.csv')
         streetdesc_15 = open('ID15_StreetDesc_Records.csv', 'a')
@@ -172,7 +177,8 @@ def createCSV(input_directory_path):
         streetdesc_15 = open('ID15_StreetDesc_Records.csv', 'a')
         write15 = csv.writer(streetdesc_15, delimiter=',', quotechar='"', lineterminator='\n')
         write15.writerow(headings15)
-    # Create the ID21_BLPU_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID21_BLPU_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a
+    # fresh one
     if os.path.isfile('ID21_BLPU_Records.csv'):
         os.remove('ID21_BLPU_Records.csv')
         blpu_21 = open('ID21_BLPU_Records.csv', 'a')
@@ -182,7 +188,8 @@ def createCSV(input_directory_path):
         blpu_21 = open('ID21_BLPU_Records.csv', 'a')
         write21 = csv.writer(blpu_21, delimiter=',', quotechar='"', lineterminator='\n')
         write21.writerow(headings21)
-    # Create the ID23_XREF_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID23_XREF_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a
+    # fresh one
     if os.path.isfile('ID23_XREF_Records.csv'):
         os.remove('ID23_XREF_Records.csv')
         xref_23 = open('ID23_XREF_Records.csv', 'a')
@@ -192,7 +199,8 @@ def createCSV(input_directory_path):
         xref_23 = open('ID23_XREF_Records.csv', 'a')
         write23 = csv.writer(xref_23, delimiter=',', quotechar='"', lineterminator='\n')
         write23.writerow(headings23)
-    # Create the ID24_LPI_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID24_LPI_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a
+    # fresh one
     if os.path.isfile('ID24_LPI_Records.csv'):
         os.remove('ID24_LPI_Records.csv')
         lpi_24 = open('ID24_LPI_Records.csv', 'a')
@@ -202,7 +210,8 @@ def createCSV(input_directory_path):
         lpi_24 = open('ID24_LPI_Records.csv', 'a')
         write24 = csv.writer(lpi_24, delimiter=',', quotechar='"', lineterminator='\n')
         write24.writerow(headings24)
-    # Create the ID28_DPA_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID28_DPA_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a
+    # fresh one
     if os.path.isfile('ID28_DPA_Records.csv'):
         os.remove('ID28_DPA_Records.csv')
         dp_28 = open('ID28_DPA_Records.csv', 'a')
@@ -212,7 +221,8 @@ def createCSV(input_directory_path):
         dp_28 = open('ID28_DPA_Records.csv', 'a')
         write28 = csv.writer(dp_28, delimiter=',', quotechar='"', lineterminator='\n')
         write28.writerow(headings28)
-    # Create the ID29_Metadata_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID29_Metadata_Records.csv file, it checks to see if it exists first, if so deletes it, then creates
+    # a fresh one
     if os.path.isfile('ID29_Metadata_Records.csv'):
         os.remove('ID29_Metadata_Records.csv')
         meta_29 = open('ID29_Metadata_Records.csv', 'a')
@@ -222,7 +232,8 @@ def createCSV(input_directory_path):
         meta_29 = open('ID29_Metadata_Records.csv', 'a')
         write29 = csv.writer(meta_29, delimiter=',', quotechar='"', lineterminator='\n')
         write29.writerow(headings29)
-    # Create the ID30_Successor_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID30_Successor_Records.csv file, it checks to see if it exists first, if so deletes it, then creates
+    # a fresh one
     if os.path.isfile('ID30_Successor_Records.csv'):
         os.remove('ID30_Successor_Records.csv')
         suc_30 = open('ID30_Successor_Records.csv', 'a')
@@ -232,7 +243,8 @@ def createCSV(input_directory_path):
         suc_30 = open('ID30_Successor_Records.csv', 'a')
         write30 = csv.writer(suc_30, delimiter=',', quotechar='"', lineterminator='\n')
         write30.writerow(headings30)
-    # Create the ID31_Org_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID31_Org_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a
+    # fresh one
     if os.path.isfile('ID31_Org_Records.csv'):
         os.remove('ID31_Org_Records.csv')
         org_31 = open('ID31_Org_Records.csv', 'a')
@@ -242,7 +254,8 @@ def createCSV(input_directory_path):
         org_31 = open('ID31_Org_Records.csv', 'a')
         write31 = csv.writer(org_31, delimiter=',', quotechar='"', lineterminator='\n')
         write31.writerow(headings31)
-    # Create the ID32_Class_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID32_Class_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a
+    # fresh one
     if os.path.isfile('ID32_Class_Records.csv'):
         os.remove('ID32_Class_Records.csv')
         class_32 = open('ID32_Class_Records.csv', 'a')
@@ -252,7 +265,8 @@ def createCSV(input_directory_path):
         class_32 = open('ID32_Class_Records.csv', 'a')
         write32 = csv.writer(class_32, delimiter=',', quotechar='"', lineterminator='\n')
         write32.writerow(headings32)
-    # Create the ID99_Trailer_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
+    # Create the ID99_Trailer_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a
+    # fresh one
     if os.path.isfile('ID99_Trailer_Records.csv'):
         os.remove('ID99_Trailer_Records.csv')
         trailer_99 = open('ID99_Trailer_Records.csv', 'a')
@@ -262,7 +276,7 @@ def createCSV(input_directory_path):
         trailer_99 = open('ID99_Trailer_Records.csv', 'a')
         write99 = csv.writer(trailer_99, delimiter=',', quotechar='"', lineterminator='\n')
         write99.writerow(headings99)
-    print 'Finished creating empty CSV files with Header line'
+    print('Finished creating empty CSV files with Header line')
     # The following counters are used to keep track of how many records of each Record Identifier type are found
     counter10 = 0
     counter11 = 0
@@ -283,10 +297,10 @@ def createCSV(input_directory_path):
     # This sections processes the CSV files using the Python CSV reader and write modules
     # It used the first value of the row to determine which CSV file that row should be written to.
     if csvfileCount > 0:
-        print "Program will now split the OS AddressBase Premium files"
+        print("Program will now split the OS AddressBase Premium files")
         for filepath in csvfileList:
             processed += 1
-            print "Processing file number " + str(processed) + " out of " + str(csvfileCount)
+            print("Processing file number " + str(processed) + " out of " + str(csvfileCount))
             with open(filepath) as f:
                 csvreader = csv.reader(f, delimiter=',', doublequote=False, lineterminator='\n', quotechar='"',
                                        quoting=0, skipinitialspace=True)
@@ -352,10 +366,10 @@ def createCSV(input_directory_path):
     # It uses the Python Zipfile module to read the data directly from the Zip file preventing the user having
     # to extract the files before splitting the data.
     if zipfileCount > 0:
-        print "Program will now split the OS AddressBase Premium files"
+        print("Program will now split the OS AddressBase Premium files")
         for filepath in zipfileList:
             processed += 1
-            print "Processing file number " + str(processed) + " out of " + str(zipfileCount)
+            print("Processing file number " + str(processed) + " out of " + str(zipfileCount))
             basename = os.path.basename(filepath)
             shortzipfile = os.path.splitext(basename)[0]
             removecsvzip = shortzipfile[0:-4]
@@ -364,7 +378,7 @@ def createCSV(input_directory_path):
             with open(filepath, 'rb') as zname:
                 zfile = zipfile.ZipFile(zname)
                 try:
-                    data = StringIO.StringIO(zfile.read(zipcsv))
+                    data = io.StringIO(zfile.read(zipcsv))
                     csvreader = csv.reader(data, delimiter=',', doublequote=False, lineterminator='\n', quotechar='"',
                                            quoting=0, skipinitialspace=True)
                     for row in csvreader:
@@ -409,7 +423,7 @@ def createCSV(input_directory_path):
                             pass
 
                 except KeyError as e:
-                    data = StringIO.StringIO(zfile.read(zipcsv2))
+                    data = io.StringIO(zfile.read(zipcsv2))
                     csvreader = csv.reader(data, delimiter=',', doublequote=False, lineterminator='\n', quotechar='"',
                                            quoting=0, skipinitialspace=True)
                     for row in csvreader:
@@ -470,23 +484,23 @@ def createCSV(input_directory_path):
     endtime = time.time()
     elapsed = endtime - starttime
     # Summary statistics showing number of records and time taken
-    print "Program has finished splitting the AddressBase Premium Files"
-    print 'Finished translating data at ', strftime("%a, %d %b %Y %H:%M:%S")
-    print 'Elapsed time: ', round(elapsed / 60, 1), ' minutes'
-    print "Number of Header Records: %s" % str(counter10)
-    print "Number of Street Records: %s" % str(counter11)
-    print "Number of Street Descriptor Records: %s" % str(counter15)
-    print "Number of BLPU Records: %s" % str(counter21)
-    print "Number of XRef Records: %s" % str(counter23)
-    print "Number of LPI Records: %s" % str(counter24)
-    print "Number of Delivery Point Records: %s" % str(counter28)
-    print "Number of Metadata Records: %s" % str(counter29)
-    print "Number of Successor Records: %s" % str(counter30)
-    print "Number of Organisation Records: %s" % str(counter31)
-    print "Number of Classification Records: %s" % str(counter32)
-    print "Number of Trailer Records: %s" % str(counter99)
+    print("Program has finished splitting the AddressBase Premium Files")
+    print('Finished translating data at ', strftime("%a, %d %b %Y %H:%M:%S"))
+    print('Elapsed time: ', round(elapsed / 60, 1), ' minutes')
+    print("Number of Header Records: %s" % str(counter10))
+    print("Number of Street Records: %s" % str(counter11))
+    print("Number of Street Descriptor Records: %s" % str(counter15))
+    print("Number of BLPU Records: %s" % str(counter21))
+    print("Number of XRef Records: %s" % str(counter23))
+    print("Number of LPI Records: %s" % str(counter24))
+    print("Number of Delivery Point Records: %s" % str(counter28))
+    print("Number of Metadata Records: %s" % str(counter29))
+    print("Number of Successor Records: %s" % str(counter30))
+    print("Number of Organisation Records: %s" % str(counter31))
+    print("Number of Classification Records: %s" % str(counter32))
+    print("Number of Trailer Records: %s" % str(counter99))
 
-    print "The program will close in 10 seconds"
+    print("The program will close in 10 seconds")
     time.sleep(10)
 
 

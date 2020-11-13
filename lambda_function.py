@@ -4,16 +4,18 @@ from split_abp_files import createCSV
 import psycopg2
 from credstash import getSecret
 
+root_dir = "/mnt/efs"
+products = ['abp', 'abi']
+
 
 def process_handler(event, context):
-    root_dir = "/mnt/efs"
     process_files(root_dir + "/abp")
     process_files(root_dir + "/abi")
 
 
 def ingest_handler(event, context):
-    root_dir = "/mnt/efs"
     ingest_files(root_dir + "/abp")
+    ingest_files(root_dir + "/abi")
 
 
 def base_epoch_dir(base_dir):
