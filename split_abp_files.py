@@ -47,41 +47,41 @@ import time
 from time import strftime
 
 # Header lines for the new CSV files these are used later to when writing the header to the new CSV files
-headings10 = ["RECORD_IDENTIFIER", "CUSTODIAN_NAME", "LOCAL_CUSTODIAN_NAME", "PROCESS_DATE", "VOLUME_NUMBER",
-              "ENTRY_DATE", "TIME_STAMP", "VERSION", "FILE_TYPE"]
-headings11 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "USRN", "RECORD_TYPE", "SWA_ORG_REF_NAMING", "STATE",
-              "STATE_DATE", "STREET_SURFACE", "STREET_CLASSIFICATION", "VERSION", "STREET_START_DATE",
-              "STREET_END_DATE", "LAST_UPDATE_DATE", "RECORD_ENTRY_DATE", "STREET_START_X", "STREET_START_Y",
-              "STREET_START_LAT", "STREET_START_LONG", "STREET_END_X", "STREET_END_Y", "STREET_END_LAT",
-              "STREET_END_LONG", "STREET_TOLERANCE"]
-headings15 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "USRN", "STREET_DESCRIPTION", "LOCALITY_NAME",
-              "TOWN_NAME", "ADMINSTRATIVE_AREA", "LANGUAGE", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
-headings21 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "LOGICAL_STATUS", "BLPU_STATE",
-              "BLPU_STATE_DATE", "PARENT_UPRN", "X_COORDINATE", "Y_COORDINATE", "LATITUDE", "LONGITUDE", "RPC",
-              "LOCAL_CUSTODIAN_CODE", "COUNTRY", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE",
-              "ADDRESSBASE_POSTAL", "POSTCODE_LOCATOR", "MULTI_OCC_COUNT"]
-headings23 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "XREF_KEY", "CROSS_REFERENCE", "VERSION",
-              "SOURCE", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
-headings24 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "LPI_KEY", "LANGUAGE", "LOGICAL_STATUS",
-              "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE", "SAO_START_NUMBER", "SAO_START_SUFFIX",
-              "SAO_END_NUMBER", "SAO_END_SUFFIX", "SAO_TEXT", "PAO_START_NUMBER", "PAO_START_SUFFIX", "PAO_END_NUMBER",
-              "PAO_END_SUFFIX", "PAO_TEXT", "USRN", "USRN_MATCH_INDICATOR", "AREA_NAME", "LEVEL", "OFFICIAL_FLAG"]
-headings28 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "UDPRN", "ORGANISATION_NAME", "DEPARTMENT_NAME",
-              "SUB_BUILDING_NAME", "BUILDING_NAME", "BUILDING_NUMBER", "DEPENDENT_THOROUGHFARE", "THOROUGHFARE",
-              "DOUBLE_DEPENDENT_LOCALITY", "DEPENDENT_LOCALITY", "POST_TOWN", "POSTCODE", "POSTCODE_TYPE",
-              "DELIVERY_POINT_SUFFIX", "WELSH_DEPENDENT_THOROUGHFARE", "WELSH_THOROUGHFARE",
-              "WELSH_DOUBLE_DEPENDENT_LOCALITY", "WELSH_DEPENDENT_LOCALITY", "WELSH_POST_TOWN", "PO_BOX_NUMBER",
-              "PROCESS_DATE", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
-headings29 = ["RECORD_IDENTIFIER", "GAZ_NAME", "GAZ_SCOPE", "TER_OF_USE", "LINKED_DATA", "GAZ_OWNER", "NGAZ_FREQ",
-              "CUSTODIAN_NAME", "CUSTODIAN_UPRN", "LOCAL_CUSTODIAN_CODE", "CO_ORD_SYSTEM", "CO_ORD_UNIT", "META_DATE",
-              "CLASS_SCHEME", "GAZ_DATE", "LANGUAGE", "CHARACTER_SET"]
-headings30 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "SUCC_KEY", "START_DATE", "END_DATE",
-              "LAST_UPDATE_DATE", "ENTRY_DATE", "SUCCESSOR"]
-headings31 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "ORG_KEY", "ORGANISATION", "LEGAL_NAME",
-              "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
-headings32 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "CLASS_KEY", "CLASSIFICATION_CODE",
-              "CLASS_SCHEME", "SCHEME_VERSION", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
-headings99 = ["RECORD_IDENTIFIER", "NEXT_VOLUME_NUMBER", "RECORD_COUNT", "ENTRY_DATE", "TIME_STAMP"]
+# headings10 = ["RECORD_IDENTIFIER", "CUSTODIAN_NAME", "LOCAL_CUSTODIAN_NAME", "PROCESS_DATE", "VOLUME_NUMBER",
+#               "ENTRY_DATE", "TIME_STAMP", "VERSION", "FILE_TYPE"]
+# headings11 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "USRN", "RECORD_TYPE", "SWA_ORG_REF_NAMING", "STATE",
+#               "STATE_DATE", "STREET_SURFACE", "STREET_CLASSIFICATION", "VERSION", "STREET_START_DATE",
+#               "STREET_END_DATE", "LAST_UPDATE_DATE", "RECORD_ENTRY_DATE", "STREET_START_X", "STREET_START_Y",
+#               "STREET_START_LAT", "STREET_START_LONG", "STREET_END_X", "STREET_END_Y", "STREET_END_LAT",
+#               "STREET_END_LONG", "STREET_TOLERANCE"]
+# headings15 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "USRN", "STREET_DESCRIPTION", "LOCALITY_NAME",
+#               "TOWN_NAME", "ADMINSTRATIVE_AREA", "LANGUAGE", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
+# headings21 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "LOGICAL_STATUS", "BLPU_STATE",
+#               "BLPU_STATE_DATE", "PARENT_UPRN", "X_COORDINATE", "Y_COORDINATE", "LATITUDE", "LONGITUDE", "RPC",
+#               "LOCAL_CUSTODIAN_CODE", "COUNTRY", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE",
+#               "ADDRESSBASE_POSTAL", "POSTCODE_LOCATOR", "MULTI_OCC_COUNT"]
+# headings23 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "XREF_KEY", "CROSS_REFERENCE", "VERSION",
+#               "SOURCE", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
+# headings24 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "LPI_KEY", "LANGUAGE", "LOGICAL_STATUS",
+#               "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE", "SAO_START_NUMBER", "SAO_START_SUFFIX",
+#               "SAO_END_NUMBER", "SAO_END_SUFFIX", "SAO_TEXT", "PAO_START_NUMBER", "PAO_START_SUFFIX", "PAO_END_NUMBER",
+#               "PAO_END_SUFFIX", "PAO_TEXT", "USRN", "USRN_MATCH_INDICATOR", "AREA_NAME", "LEVEL", "OFFICIAL_FLAG"]
+# headings28 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "UDPRN", "ORGANISATION_NAME", "DEPARTMENT_NAME",
+#               "SUB_BUILDING_NAME", "BUILDING_NAME", "BUILDING_NUMBER", "DEPENDENT_THOROUGHFARE", "THOROUGHFARE",
+#               "DOUBLE_DEPENDENT_LOCALITY", "DEPENDENT_LOCALITY", "POST_TOWN", "POSTCODE", "POSTCODE_TYPE",
+#               "DELIVERY_POINT_SUFFIX", "WELSH_DEPENDENT_THOROUGHFARE", "WELSH_THOROUGHFARE",
+#               "WELSH_DOUBLE_DEPENDENT_LOCALITY", "WELSH_DEPENDENT_LOCALITY", "WELSH_POST_TOWN", "PO_BOX_NUMBER",
+#               "PROCESS_DATE", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
+# headings29 = ["RECORD_IDENTIFIER", "GAZ_NAME", "GAZ_SCOPE", "TER_OF_USE", "LINKED_DATA", "GAZ_OWNER", "NGAZ_FREQ",
+#               "CUSTODIAN_NAME", "CUSTODIAN_UPRN", "LOCAL_CUSTODIAN_CODE", "CO_ORD_SYSTEM", "CO_ORD_UNIT", "META_DATE",
+#               "CLASS_SCHEME", "GAZ_DATE", "LANGUAGE", "CHARACTER_SET"]
+# headings30 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "SUCC_KEY", "START_DATE", "END_DATE",
+#               "LAST_UPDATE_DATE", "ENTRY_DATE", "SUCCESSOR"]
+# headings31 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "ORG_KEY", "ORGANISATION", "LEGAL_NAME",
+#               "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
+# headings32 = ["RECORD_IDENTIFIER", "CHANGE_TYPE", "PRO_ORDER", "UPRN", "CLASS_KEY", "CLASSIFICATION_CODE",
+#               "CLASS_SCHEME", "SCHEME_VERSION", "START_DATE", "END_DATE", "LAST_UPDATE_DATE", "ENTRY_DATE"]
+# headings99 = ["RECORD_IDENTIFIER", "NEXT_VOLUME_NUMBER", "RECORD_COUNT", "ENTRY_DATE", "TIME_STAMP"]
 
 
 def createCSV(input_directory_path):
@@ -147,121 +147,121 @@ def createCSV(input_directory_path):
         os.remove('ID10_Header_Records.csv')
         header_10 = open('ID10_Header_Records.csv', 'a')
         write10 = csv.writer(header_10, delimiter=',', quotechar='"', lineterminator='\n')
-        write10.writerow(headings10)
+        # write10.writerow(headings10)
     else:
         header_10 = open('ID10_Header_Records.csv', 'a')
         write10 = csv.writer(header_10, delimiter=',', quotechar='"', lineterminator='\n')
-        write10.writerow(headings10)
+        # write10.writerow(headings10)
     # Create the ID11_Street_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID11_Street_Records.csv'):
         os.remove('ID11_Street_Records.csv')
         street_11 = open('ID11_Street_Records.csv', 'a')
         write11 = csv.writer(street_11, delimiter=',', quotechar='"', lineterminator='\n')
-        write11.writerow(headings11)
+        # write11.writerow(headings11)
     else:
         street_11 = open('ID11_Street_Records.csv', 'a')
         write11 = csv.writer(street_11, delimiter=',', quotechar='"', lineterminator='\n')
-        write11.writerow(headings11)
+        # write11.writerow(headings11)
     # Create the ID15_StreetDesc_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID15_StreetDesc_Records.csv'):
         os.remove('ID15_StreetDesc_Records.csv')
         streetdesc_15 = open('ID15_StreetDesc_Records.csv', 'a')
         write15 = csv.writer(streetdesc_15, delimiter=',', quotechar='"', lineterminator='\n')
-        write15.writerow(headings15)
+        # write15.writerow(headings15)
     else:
         streetdesc_15 = open('ID15_StreetDesc_Records.csv', 'a')
         write15 = csv.writer(streetdesc_15, delimiter=',', quotechar='"', lineterminator='\n')
-        write15.writerow(headings15)
+        # write15.writerow(headings15)
     # Create the ID21_BLPU_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID21_BLPU_Records.csv'):
         os.remove('ID21_BLPU_Records.csv')
         blpu_21 = open('ID21_BLPU_Records.csv', 'a')
         write21 = csv.writer(blpu_21, delimiter=',', quotechar='"', lineterminator='\n')
-        write21.writerow(headings21)
+        # write21.writerow(headings21)
     else:
         blpu_21 = open('ID21_BLPU_Records.csv', 'a')
         write21 = csv.writer(blpu_21, delimiter=',', quotechar='"', lineterminator='\n')
-        write21.writerow(headings21)
+        # write21.writerow(headings21)
     # Create the ID23_XREF_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID23_XREF_Records.csv'):
         os.remove('ID23_XREF_Records.csv')
         xref_23 = open('ID23_XREF_Records.csv', 'a')
         write23 = csv.writer(xref_23, delimiter=',', quotechar='"', lineterminator='\n')
-        write23.writerow(headings23)
+        # write23.writerow(headings23)
     else:
         xref_23 = open('ID23_XREF_Records.csv', 'a')
         write23 = csv.writer(xref_23, delimiter=',', quotechar='"', lineterminator='\n')
-        write23.writerow(headings23)
+        # write23.writerow(headings23)
     # Create the ID24_LPI_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID24_LPI_Records.csv'):
         os.remove('ID24_LPI_Records.csv')
         lpi_24 = open('ID24_LPI_Records.csv', 'a')
         write24 = csv.writer(lpi_24, delimiter=',', quotechar='"', lineterminator='\n')
-        write24.writerow(headings24)
+        # write24.writerow(headings24)
     else:
         lpi_24 = open('ID24_LPI_Records.csv', 'a')
         write24 = csv.writer(lpi_24, delimiter=',', quotechar='"', lineterminator='\n')
-        write24.writerow(headings24)
+        # write24.writerow(headings24)
     # Create the ID28_DPA_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID28_DPA_Records.csv'):
         os.remove('ID28_DPA_Records.csv')
         dp_28 = open('ID28_DPA_Records.csv', 'a')
         write28 = csv.writer(dp_28, delimiter=',', quotechar='"', lineterminator='\n')
-        write28.writerow(headings28)
+        # write28.writerow(headings28)
     else:
         dp_28 = open('ID28_DPA_Records.csv', 'a')
         write28 = csv.writer(dp_28, delimiter=',', quotechar='"', lineterminator='\n')
-        write28.writerow(headings28)
+        # write28.writerow(headings28)
     # Create the ID29_Metadata_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID29_Metadata_Records.csv'):
         os.remove('ID29_Metadata_Records.csv')
         meta_29 = open('ID29_Metadata_Records.csv', 'a')
         write29 = csv.writer(meta_29, delimiter=',', quotechar='"', lineterminator='\n')
-        write29.writerow(headings29)
+        # write29.writerow(headings29)
     else:
         meta_29 = open('ID29_Metadata_Records.csv', 'a')
         write29 = csv.writer(meta_29, delimiter=',', quotechar='"', lineterminator='\n')
-        write29.writerow(headings29)
+        # write29.writerow(headings29)
     # Create the ID30_Successor_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID30_Successor_Records.csv'):
         os.remove('ID30_Successor_Records.csv')
         suc_30 = open('ID30_Successor_Records.csv', 'a')
         write30 = csv.writer(suc_30, delimiter=',', quotechar='"', lineterminator='\n')
-        write30.writerow(headings30)
+        # write30.writerow(headings30)
     else:
         suc_30 = open('ID30_Successor_Records.csv', 'a')
         write30 = csv.writer(suc_30, delimiter=',', quotechar='"', lineterminator='\n')
-        write30.writerow(headings30)
+        # write30.writerow(headings30)
     # Create the ID31_Org_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID31_Org_Records.csv'):
         os.remove('ID31_Org_Records.csv')
         org_31 = open('ID31_Org_Records.csv', 'a')
         write31 = csv.writer(org_31, delimiter=',', quotechar='"', lineterminator='\n')
-        write31.writerow(headings31)
+        # write31.writerow(headings31)
     else:
         org_31 = open('ID31_Org_Records.csv', 'a')
         write31 = csv.writer(org_31, delimiter=',', quotechar='"', lineterminator='\n')
-        write31.writerow(headings31)
+        # write31.writerow(headings31)
     # Create the ID32_Class_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID32_Class_Records.csv'):
         os.remove('ID32_Class_Records.csv')
         class_32 = open('ID32_Class_Records.csv', 'a')
         write32 = csv.writer(class_32, delimiter=',', quotechar='"', lineterminator='\n')
-        write32.writerow(headings32)
+        # write32.writerow(headings32)
     else:
         class_32 = open('ID32_Class_Records.csv', 'a')
         write32 = csv.writer(class_32, delimiter=',', quotechar='"', lineterminator='\n')
-        write32.writerow(headings32)
+        # write32.writerow(headings32)
     # Create the ID99_Trailer_Records.csv file, it checks to see if it exists first, if so deletes it, then creates a fresh one
     if os.path.isfile('ID99_Trailer_Records.csv'):
         os.remove('ID99_Trailer_Records.csv')
         trailer_99 = open('ID99_Trailer_Records.csv', 'a')
         write99 = csv.writer(trailer_99, delimiter=',', quotechar='"', lineterminator='\n')
-        write99.writerow(headings99)
+        # write99.writerow(headings99)
     else:
         trailer_99 = open('ID99_Trailer_Records.csv', 'a')
         write99 = csv.writer(trailer_99, delimiter=',', quotechar='"', lineterminator='\n')
-        write99.writerow(headings99)
+        # write99.writerow(headings99)
     print 'Finished creating empty CSV files with Header line'
     # The following counters are used to keep track of how many records of each Record Identifier type are found
     counter10 = 0
@@ -492,9 +492,9 @@ def createCSV(input_directory_path):
 
 # sys.exit()
 
-def main(args):
-    createCSV(args[1])
+def main():
+    createCSV()
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
