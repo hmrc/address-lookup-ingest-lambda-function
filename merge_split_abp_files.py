@@ -50,27 +50,36 @@ fileNameToHeadingsMap = {
 }
 
 file_names = fileNameToHeadingsMap.keys()
-csv_folder_prefix = 'ID_CSV_'
+
+
+# Find the latest epoch dir in base_directory_path. Base directory path is expected to be of the form:
+#   <root_path>/<product_type>
+#   with subdirectory(ies) of the form <epoch> which is an int, eg 79. This function will look at the
+#   base_directory_path and determine the latest <epoch> dir - the higher the number, the more recent the epoch. We pick
+# the most recent.
+def find_latest_epoch(base_directory_path):
+    return max([e for e in os.listdir(base_directory_path) if e.isdigit()])
 
 
 # Process processed .csv files in the current directory
-# Since prcessing happens in parallel batches, the root directory should contain directories names like ID_CSV_* where
-# '*' is some unique suffix. Each of these directories will contain the full complement of partial files - see
-# `file_names` above. To merge, find all files with the same name across all the ID_CSV_* directories and concat them
+# Since processing happens in parallel batches, the root directory should contain batch directories with unioue
+# numerical names, eg 1 or 2. Each of these directories will contain the full complement of partial files - see
+# `file_names` above. To merge, find all files with the same name across all the batch directories and concat them
 # into one file in the root directory.
 def mergeCSV(input_directory_path):
-    print 'This program will merge extracted CSV files by record identifier into new CSV files'
+    print('This program will merge extracted CSV files by record identifier into new CSV files')
 
     for f, h in fileNameToHeadingsMap.items():
         with open(input_directory_path + '/' + f, 'w') as ef:
             ef.write(','.join(h) + '\n')
 
     for dirname, dirnames, filenames in os.walk(input_directory_path):
-        if os.path.basename(dirname).startswith(csv_folder_prefix):
+        if dirname is not input_directory_path:
             for csvf in filenames:
-                with open(input_directory_path + '/' + os.path.basename(csvf), 'a') as outf:
-                    with open(dirname + '/' + csvf, 'r') as inf:
-                        outf.write(inf.read())
+                if csvf.endswith('.csv'):
+                    with open(input_directory_path + '/' + os.path.basename(csvf), 'a') as outf:
+                        with open(dirname + '/' + csvf, 'r') as inf:
+                            outf.write(inf.read())
 
 
 def main(d):
@@ -78,4 +87,4 @@ def main(d):
 
 
 if __name__ == '__main__':
-    main(sys.argv[0])
+    main(sys.argv[1])
