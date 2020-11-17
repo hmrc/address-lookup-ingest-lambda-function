@@ -61,7 +61,6 @@ def createCSV(input_directory_path):
 
     # An emtpy array and counter used to store and count the number of CSV files the program finds
     csvfileList = []
-    csvfileCount = 0
     # An emtpy array and counter used to store and count the number of Zip files the program finds
     zipfileList = []
     zipfileCount = 0
@@ -71,11 +70,7 @@ def createCSV(input_directory_path):
     # it will also be included.
     for dirname, dirnames, filenames in os.walk(directorypath):
         for filename in filenames:
-            if filename.endswith(".csv"):
-                csvfile = os.path.join(directorypath, filename)
-                csvfileList.append(csvfile)
-                csvfileCount += 1
-            elif filename.endswith(".zip"):
+            if filename.endswith(".zip"):
                 zippath = os.path.join(directorypath, filename)
                 zipfileList.append(zippath)
                 zipfileCount += 1
@@ -83,23 +78,12 @@ def createCSV(input_directory_path):
                 pass
     # The following section makes sure that it is dealing with the correct files, either CSV or Zip but not both types
     try:
-        if csvfileCount > 0 and zipfileCount > 0:
-            print "Program has found both OS AddressBase Premium CSV  and ZIP files."
-            print "Please tidy up the folder of files and try again"
-            time.sleep(5)
-            sys.exit()
-        else:
-            pass
-        if csvfileCount > 0:
-            print "Program has found %s OS AddressBase Premium CSV Files" % csvfileCount
-        else:
-            pass
         if zipfileCount > 0:
             print "Program has found %s OS AddressBase Premium Zipped CSV Files" % zipfileCount
         else:
             pass
 
-        if csvfileCount == 0 and zipfileCount == 0:
+        if zipfileCount == 0:
             print "Program could not find any OS AddressBase Premium files and will now exit"
             time.sleep(5)
             sys.exit()
@@ -219,75 +203,7 @@ def createCSV(input_directory_path):
 
     # Counter to keep track of the number of files processed
     processed = 0
-    # There is a different routine for processing CSV files compared to ZIP files
-    # This sections processes the CSV files using the Python CSV reader and write modules
-    # It used the first value of the row to determine which CSV file that row should be written to.
-    if csvfileCount > 0:
-        print "Program will now split the OS AddressBase Premium files"
-        for filepath in csvfileList:
-            processed += 1
-            print "Processing file number " + str(processed) + " out of " + str(csvfileCount)
-            with open(filepath) as f:
-                csvreader = csv.reader(f, delimiter=',', doublequote=False, lineterminator='\n', quotechar='"',
-                                       quoting=0, skipinitialspace=True)
-                try:
-                    for row in csvreader:
-                        abtype = row[0]
-                        if "10" in abtype:
-                            write10.writerow(row)
-                            counter10 += 1
-                        elif "11" in abtype:
-                            write11.writerow(row)
-                            counter11 += 1
-                        elif "15" in abtype:
-                            write15.writerow(row)
-                            counter15 += 1
-                        elif "21" in abtype:
-                            write21.writerow(row)
-                            counter21 += 1
-                        elif "23" in abtype:
-                            write23.writerow(row)
-                            counter23 += 1
-                        elif "24" in abtype:
-                            write24.writerow(row)
-                            counter24 += 1
-                        elif "28" in abtype:
-                            write28.writerow(row)
-                            counter28 += 1
-                        elif "29" in abtype:
-                            write29.writerow(row)
-                            counter29 += 1
-                        elif "30" in abtype:
-                            write30.writerow(row)
-                            counter30 += 1
-                        elif "31" in abtype:
-                            write31.writerow(row)
-                            counter31 += 1
-                        elif "32" in abtype:
-                            write32.writerow(row)
-                            counter32 += 1
-                        elif "99" in abtype:
-                            write99.writerow(row)
-                            counter99 += 1
-                        else:
-                            pass
-                except KeyError as e:
-                    pass
-        header_10.close()
-        street_11.close()
-        streetdesc_15.close()
-        blpu_21.close()
-        xref_23.close()
-        lpi_24.close()
-        dp_28.close()
-        meta_29.close()
-        suc_30.close()
-        org_31.close()
-        class_32.close()
-        trailer_99.close()
 
-    else:
-        pass
     # The following section processes the Zip files.
     # It uses the Python Zipfile module to read the data directly from the Zip file preventing the user having
     # to extract the files before splitting the data.
@@ -425,9 +341,6 @@ def createCSV(input_directory_path):
     print "Number of Organisation Records: %s" % str(counter31)
     print "Number of Classification Records: %s" % str(counter32)
     print "Number of Trailer Records: %s" % str(counter99)
-
-    print "The program will close in 10 seconds"
-    time.sleep(10)
 
 
 # sys.exit()

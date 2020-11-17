@@ -1,6 +1,7 @@
 from os import listdir, chdir, path, read
 from time import time
 from split_abp_files import createCSV
+from merge_split_abp_files import mergeCSV, find_latest_epoch
 import psycopg2
 from credstash import getSecret
 
@@ -8,14 +9,20 @@ root_dir = "/mnt/efs"
 products = ['abp', 'abi']
 
 
-def process_handler(event, context):
-    process_files(root_dir + "/abp")
-    process_files(root_dir + "/abi")
+# batch_path is the full path to the batch directory, eg <root>/abp/79/2
+def process_handler(batch_path, context):
+    process_files(batch_path)
 
 
-def ingest_handler(event, context):
-    ingest_files(root_dir + "/abp")
-    ingest_files(root_dir + "/abi")
+# base_dir is the base path, eg <root>/abp
+def merge_handler(base_dir, context):
+    latest_epoch = find_latest_epoch(base_dir)
+    merge_files(base_dir + '/' + latest_epoch)
+
+
+def ingest_handler(base_dir, context):
+    latest_epoch = find_latest_epoch(base_dir)
+    ingest_files(base_dir + '/' + latest_epoch)
 
 
 def base_epoch_dir(base_dir):
@@ -34,22 +41,31 @@ def base_epoch_dir(base_dir):
         return None
 
 
-def process_files(base_dir):
-    result = base_epoch_dir(base_dir)
-    if result is None:
-        return 1
-    (epoch, epoch_base_dir) = result
+# This will get called with the batch directory
+def process_files(batch_dir):
+    print("Processing files in dir: {}".format(batch_dir))
 
-    print("Processing files in dir: {}".format(epoch_base_dir))
+    print(listdir(batch_dir))
 
-    print(listdir(epoch_base_dir))
-
-    chdir(epoch_base_dir)
+    chdir(batch_dir)
     start_time = time()
-    createCSV(epoch_base_dir)
+    createCSV(batch_dir)
     end_time = time()
 
     print("Time taken to split files: ", end_time - start_time)
+
+    return 0
+
+
+# This will get called with the batch directory
+def merge_files(epoch_base_dir):
+    print("Merging files in dir: {}".format(epoch_base_dir))
+
+    start_time = time()
+    mergeCSV(epoch_base_dir)
+    end_time = time()
+
+    print("Time taken to merge files: ", end_time - start_time)
 
     return 0
 
