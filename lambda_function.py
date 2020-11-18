@@ -112,7 +112,7 @@ def db_con_params(options, password, host):
     return {
         "host": host,
         "port": 5432,
-        "database": "postgres",
+        "database": "addressbasepremium",
         "user": "root",
         "password": password,
         "options": options
