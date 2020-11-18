@@ -1,7 +1,6 @@
 from os import listdir, chdir, path, read
 from time import time
 from split_abp_files import createCSV
-from merge_split_abp_files import mergeCSV, find_latest_epoch
 import psycopg2
 from credstash import getSecret
 
@@ -12,12 +11,6 @@ products = ['abp', 'abi']
 # batch_path is the full path to the batch directory, eg <root>/abp/79/2
 def process_handler(batch_path, context):
     process_files(batch_path)
-
-
-# base_dir is the base path, eg <root>/abp - NOT NEEDED
-def merge_handler(base_dir, context):
-    latest_epoch = find_latest_epoch(base_dir)
-    merge_files(base_dir + '/' + latest_epoch)
 
 
 def ingest_handler(batch_dir, context):
@@ -54,19 +47,6 @@ def process_files(batch_dir):
     print("Time taken to split files: ", end_time - start_time)
 
     return batch_dir
-
-
-# This will get called with the batch directory
-def merge_files(epoch_base_dir):
-    print("Merging files in dir: {}".format(epoch_base_dir))
-
-    start_time = time()
-    mergeCSV(epoch_base_dir)
-    end_time = time()
-
-    print("Time taken to merge files: ", end_time - start_time)
-
-    return 0
 
 
 # batch_dir will be of form <path>/ab[p|i]/<epoch>/<batch>
@@ -112,8 +92,12 @@ def epoch_schema_connection(epoch):
 
 
 def create_connection(options):
-    con_params = db_con_params(options, getSecret('address_lookup_rds_password',
-                                                  context={'role': 'address_lookup_file_download'}))
+    con_params = db_con_params(options,
+                               getSecret('address_lookup_rds_password',
+                                                  context={'role': 'address_lookup_file_download'}),
+                               getSecret('address_lookup_db_host',
+                                         context={'role': 'address_lookup_file_download'})
+                               )
     return psycopg2.connect(
         host=con_params['host'],
         port=con_params['port'],
@@ -124,9 +108,9 @@ def create_connection(options):
     )
 
 
-def db_con_params(options, password):
+def db_con_params(options, password, host):
     return {
-        "host": "addresslookup.cobnrd9qoh0u.eu-west-2.rds.amazonaws.com",
+        "host": host,
         "port": 5432,
         "database": "postgres",
         "user": "root",
