@@ -1,5 +1,5 @@
 from os import listdir, chdir, path, read
-from time import time
+from time import time, gmtime, strftime
 from split_abp_files import createCSV
 import psycopg2
 from credstash import getSecret
@@ -52,7 +52,7 @@ def process_files(batch_dir):
 # batch_dir will be of form <path>/ab[p|i]/<epoch>/<batch>
 def ingest_files(batch_dir):
     epoch = batch_dir.split(path.sep)[-2]
-    db_schema_name = "ab{}".format(epoch)
+    db_schema_name = strftime("ab{}".format(epoch) + "_%Y%m%d_%H%M%S", gmtime())
 
     schema_sql = read_db_schema_sql(db_schema_name)
     indexes_sql = read_db_indexes_sql(db_schema_name)
@@ -71,13 +71,11 @@ def init_schema(db_schema_name):
     default_con.close()
 
 
-def populate_schema(db_schema_name, epoch_base_dir, schema_sql, indexes_sql):
+def populate_schema(db_schema_name, batch_dir, schema_sql, indexes_sql):
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
-            for batch_dir in listdir(epoch_base_dir):
-                if path.isdir(batch_dir):
-                    ingest_data(cur, db_schema_name, batch_dir)
+            ingest_data(cur, db_schema_name, batch_dir)
             create_db_indexes(epoch_schema_con, cur, indexes_sql)
     epoch_schema_con.commit()
     epoch_schema_con.close()
@@ -119,9 +117,8 @@ def db_con_params(options, password, host):
     }
 
 
-# TODO: Should we zap the schema if it already exists?
 def create_db_schema(db_con, db_cur, schema_name):
-    db_cur.execute("CREATE SCHEMA {}".format(schema_name))
+    db_cur.execute("CREATE SCHEMA IF NOT EXISTS {}".format(schema_name))
     db_con.commit()
 
 
