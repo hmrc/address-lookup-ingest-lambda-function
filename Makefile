@@ -6,6 +6,7 @@ build:
 	rm -rf $(TARGET_PATH)
 	mkdir $(TARGET_PATH)
 	zip dist/${ARTIFACT}.zip *.py
+	zip dist/${ARTIFACT}.zip *.sql
 	zip -r dist/${ARTIFACT}.zip psycopg2
 	cd venv/lib/python2.7/site-packages && zip ${ROOT_DIR}/dist/${ARTIFACT}.zip credstash.py && zip -r ${ROOT_DIR}/dist/${ARTIFACT}.zip Crypto
 	cd $(TARGET_PATH); openssl dgst -sha256 -binary $(ARTIFACT).zip | openssl enc -base64 > $(ARTIFACT).base64sha256
