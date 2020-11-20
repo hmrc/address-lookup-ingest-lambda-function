@@ -1,4 +1,4 @@
-from os import listdir, chdir, path, read
+from os import listdir, chdir, path
 from time import time, gmtime, strftime
 from split_abp_files import createCSV
 import psycopg2
@@ -13,8 +13,19 @@ def process_handler(batch_path, context):
     process_files(batch_path)
 
 
-def ingest_handler(batch_dir, context):
-    ingest_files(batch_dir)
+def create_schema_handler(epoch, context):
+    create_schema(epoch)
+
+
+def ingest_handler(batch_info, context):
+    db_schema_name = batch_info['schemaName']
+    batch_dir = batch_info['batchDir']
+
+    ingest_files(db_schema_name, batch_dir)
+
+
+def create_indexes_handler(db_schema_name, context):
+    create_indexes(db_schema_name)
 
 
 def base_epoch_dir(base_dir):
@@ -37,8 +48,6 @@ def base_epoch_dir(base_dir):
 def process_files(batch_dir):
     print("Processing files in dir: {}".format(batch_dir))
 
-    print(listdir(batch_dir))
-
     chdir(batch_dir)
     start_time = time()
     createCSV(batch_dir)
@@ -49,34 +58,57 @@ def process_files(batch_dir):
     return batch_dir
 
 
-# batch_dir will be of form <path>/ab[p|i]/<epoch>/<batch>
-def ingest_files(batch_dir):
-    epoch = batch_dir.split(path.sep)[-2]
+def create_schema(epoch):
     db_schema_name = strftime("ab{}".format(epoch) + "_%Y%m%d_%H%M%S", gmtime())
-
-    schema_sql = read_db_schema_sql(db_schema_name)
-    indexes_sql = read_db_indexes_sql(db_schema_name)
-
-    print("Ingesting from ...{}".format(batch_dir))
+    print("Using schema name ...{}".format(db_schema_name))
 
     init_schema(db_schema_name)
-    populate_schema(db_schema_name, batch_dir, schema_sql, indexes_sql)
+    schema_sql = read_db_schema_sql(db_schema_name)
+    populate_schema(db_schema_name, schema_sql)
+
+    return db_schema_name
+
+
+# batch_dir will be of form <path>/ab[p|i]/<epoch>/<batch>
+def ingest_files(db_schema_name, batch_dir):
+    print("Ingesting from ...{} to ...{}".format(batch_dir, db_schema_name))
+
+    with epoch_schema_connection(db_schema_name) as epoch_schema_con:
+        with epoch_schema_con.cursor() as cur:
+            ingest_data(cur, db_schema_name, batch_dir)
+
+    epoch_schema_con.commit()
+    epoch_schema_con.close()
+
+
+def create_indexes(db_schema_name):
+    print("Creating indexes for ...{}".format(db_schema_name))
+    indexes_sql = read_db_indexes_sql(db_schema_name)
+
+    with epoch_schema_connection(db_schema_name) as epoch_schema_con:
+        with epoch_schema_con.cursor() as cur:
+            create_db_indexes(epoch_schema_con, cur, indexes_sql)
+
+    epoch_schema_con.commit()
+    epoch_schema_con.close()
 
 
 def init_schema(db_schema_name):
+    print("Creating schema ...{}".format(db_schema_name))
     with default_connection() as default_con:
         with default_con.cursor() as cur:
             create_db_schema(default_con, cur, db_schema_name)
+
     default_con.commit()
     default_con.close()
 
 
-def populate_schema(db_schema_name, batch_dir, schema_sql, indexes_sql):
+def populate_schema(db_schema_name, schema_sql):
+    print("Populating schema with tables ...{}".format(db_schema_name))
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
-            ingest_data(cur, db_schema_name, batch_dir)
-            create_db_indexes(epoch_schema_con, cur, indexes_sql)
+
     epoch_schema_con.commit()
     epoch_schema_con.close()
 
