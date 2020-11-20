@@ -6,12 +6,14 @@ from credstash import getSecret
 
 
 # batch_path is the full path to the batch directory, eg <root>/abp/79/2
-def process_handler(batch_path, context):
-    process_files(batch_path)
+def process_handler(batch_info, context):
+    batch_dir = batch_info['batchDir']
+
+    process_files(batch_dir)
 
 
 def create_schema_handler(epoch, context):
-    create_schema(epoch)
+    return create_schema(epoch)
 
 
 def ingest_handler(batch_info, context):
