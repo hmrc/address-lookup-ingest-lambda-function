@@ -4,9 +4,6 @@ from split_abp_files import createCSV
 import psycopg2
 from credstash import getSecret
 
-root_dir = "/mnt/efs"
-products = ['abp', 'abi']
-
 
 # batch_path is the full path to the batch directory, eg <root>/abp/79/2
 def process_handler(batch_path, context):

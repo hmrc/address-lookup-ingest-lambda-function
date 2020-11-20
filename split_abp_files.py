@@ -49,6 +49,11 @@ from constants import *
 
 
 def createCSV(input_directory_path):
+    processing_done_marker_file = '{}/processing.done'.format(input_directory_path)
+    if os.path.exists(processing_done_marker_file):
+        print("Found processing done marker file {} - skipping processing".format(processing_done_marker_file))
+        return
+
     print 'This program will split OS AddressBase Premium Zip CSV or extracted CSV files by record identifier into new CSV files'
     starttime = time.time()
 
@@ -147,6 +152,9 @@ def createCSV(input_directory_path):
     print "Number of Organisation Records: %s" % str(csv_writers['31'].counter)
     print "Number of Classification Records: %s" % str(csv_writers['32'].counter)
     print "Number of Trailer Records: %s" % str(csv_writers['99'].counter)
+
+    with open(processing_done_marker_file, 'w') as done_file:
+        done_file.write("")
 
 
 def make_csv_writers(files_map):
