@@ -23,6 +23,10 @@ def ingest_handler(batch_info, context):
     ingest_files(db_schema_name, batch_dir)
 
 
+def create_lookup_view_handler(db_schema_name, context):
+    create_lookup_view(db_schema_name)
+
+
 def create_indexes_handler(db_schema_name, context):
     create_indexes(db_schema_name)
 
@@ -59,7 +63,7 @@ def process_files(batch_dir):
 
 def create_schema(epoch):
     db_schema_name = strftime("ab{}".format(epoch) + "_%Y%m%d_%H%M%S", gmtime())
-    print("Using schema name ...{}".format(db_schema_name))
+    print("Using schema name {}".format(db_schema_name))
 
     init_schema(db_schema_name)
     schema_sql = read_db_schema_sql(db_schema_name)
@@ -70,7 +74,7 @@ def create_schema(epoch):
 
 # batch_dir will be of form <path>/ab[p|i]/<epoch>/<batch>
 def ingest_files(db_schema_name, batch_dir):
-    print("Ingesting from ...{} to ...{}".format(batch_dir, db_schema_name))
+    print("Ingesting from {} to {}".format(batch_dir, db_schema_name))
 
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
@@ -81,7 +85,19 @@ def ingest_files(db_schema_name, batch_dir):
 
 
 def create_indexes(db_schema_name):
-    print("Creating indexes for ...{}".format(db_schema_name))
+    print("Creating indexes for {}".format(db_schema_name))
+    indexes_sql = read_db_indexes_sql(db_schema_name)
+
+    with epoch_schema_connection(db_schema_name) as epoch_schema_con:
+        with epoch_schema_con.cursor() as cur:
+            create_db_indexes(epoch_schema_con, cur, indexes_sql)
+
+    epoch_schema_con.commit()
+    epoch_schema_con.close()
+
+
+def create_lookup_view(db_schema_name):
+    print("Creating lookup_view {}".format(db_schema_name))
     indexes_sql = read_db_indexes_sql(db_schema_name)
 
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
@@ -93,7 +109,7 @@ def create_indexes(db_schema_name):
 
 
 def init_schema(db_schema_name):
-    print("Creating schema ...{}".format(db_schema_name))
+    print("Creating schema {}".format(db_schema_name))
     with default_connection() as default_con:
         with default_con.cursor() as cur:
             create_db_schema(default_con, cur, db_schema_name)
@@ -103,7 +119,7 @@ def init_schema(db_schema_name):
 
 
 def populate_schema(db_schema_name, schema_sql):
-    print("Populating schema with tables ...{}".format(db_schema_name))
+    print("Populating schema with tables {}".format(db_schema_name))
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
@@ -161,6 +177,11 @@ def read_db_schema_sql(db_schema_name):
 
 def read_db_indexes_sql(db_schema_name):
     sql = open('create_db_schema_indexes.sql', 'r').read().replace("__schema__", db_schema_name)
+    return sql
+
+
+def read_db_lookup_view_sql(db_schema_name):
+    sql = open('create_db_lookup_view.sql', 'r').read().replace("__schema__", db_schema_name)
     return sql
 
 
