@@ -102,12 +102,9 @@ def create_lookup_view_and_indexes(db_schema_name):
     print("Creating lookup_view {}".format(db_schema_name))
     lookup_view_sql = read_db_lookup_view_and_indexes_sql(db_schema_name)
 
-    with async_epoch_schema_connection(db_schema_name) as epoch_schema_con:
-        with epoch_schema_con.cursor() as cur:
-            cur.execute(lookup_view_sql)
-
-    epoch_schema_con.commit()
-    epoch_schema_con.close()
+    epoch_schema_con = async_epoch_schema_connection(db_schema_name)
+    with epoch_schema_con.cursor() as cur:
+        cur.execute(lookup_view_sql)
 
 
 def init_schema(db_schema_name):
@@ -116,7 +113,6 @@ def init_schema(db_schema_name):
         with default_con.cursor() as cur:
             create_db_schema(default_con, cur, db_schema_name)
 
-    default_con.commit()
     default_con.close()
 
 
@@ -126,7 +122,6 @@ def populate_schema(db_schema_name, schema_sql):
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
 
-    epoch_schema_con.commit()
     epoch_schema_con.close()
 
 
@@ -248,5 +243,5 @@ def insert_data_into_table(db_cur, table, file):
 
 if __name__ == "__main__":
     # process_handler(None, None)
-    status = check_status_handler("ab79_20201120_161341", None)
-    print("status: {}".format(status))
+    # create_lookup_view_and_indexes_handler("ab79_20201120_161341", None)
+    print(check_status_handler("ab79_20201120_161341", None))

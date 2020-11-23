@@ -1,8 +1,10 @@
 UPDATE public.address_lookup_status
 SET status = 'ingesting'
 WHERE schema_name = '__schema__';
+COMMIT;
 
 DROP MATERIALIZED VIEW IF EXISTS __schema__.address_lookup;
+COMMIT;
 
 CREATE MATERIALIZED VIEW __schema__.address_lookup AS
 SELECT array_to_string(ARRAY [btrim(d.sub_building_name::text), btrim(d.building_name::text)], ', '::text) AS line1,
@@ -63,12 +65,14 @@ FROM __schema__.abp_delivery_point d
          JOIN __schema__.abp_lpi l ON l.uprn = b.uprn
          JOIN __schema__.abp_street_descriptor asd on l.usrn = asd.usrn;
 
-CREATE INDEX IF NOT EXISTS __schema__.address_lookup_ft_col_idx
+CREATE INDEX IF NOT EXISTS address_lookup_ft_col_idx
     ON __schema__.address_lookup USING gin (address_lookup_ft_col);
 
-CREATE INDEX IF NOT EXISTS __schema__.address_lookup_postcode_idx
+CREATE INDEX IF NOT EXISTS address_lookup_postcode_idx
     ON __schema__.address_lookup (postcode);
+COMMIT;
 
 UPDATE public.address_lookup_status
 SET status = 'completed'
 WHERE schema_name = '__schema__';
+COMMIT;
