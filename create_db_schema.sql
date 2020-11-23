@@ -216,3 +216,12 @@ CREATE TABLE __schema__.abp_successor (
                                ENTRY_DATE DATE,
                                SUCCESSOR BIGINT
 );
+
+-- created
+-- ingesting
+-- completed
+CREATE TABLE public.address_lookup_view_created (
+    schema_name varchar(64) not null primary key,
+    status      varchar(32) not null
+);
+INSERT INTO public.address_lookup_view_created(schema_name, status) VALUES('__schema__', 'schema_created');

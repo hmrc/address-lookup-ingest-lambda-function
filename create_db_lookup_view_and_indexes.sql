@@ -1,3 +1,7 @@
+UPDATE public.address_lookup_status
+SET status = 'ingesting'
+WHERE schema_name = '__schema__';
+
 DROP MATERIALIZED VIEW IF EXISTS __schema__.address_lookup;
 
 CREATE MATERIALIZED VIEW __schema__.address_lookup AS
@@ -65,4 +69,6 @@ CREATE INDEX IF NOT EXISTS __schema__.address_lookup_ft_col_idx
 CREATE INDEX IF NOT EXISTS __schema__.address_lookup_postcode_idx
     ON __schema__.address_lookup (postcode);
 
-SELECT 'done' as "status" INTO __schema__.address_lookup_view_created;
+UPDATE public.address_lookup_status
+SET status = 'completed'
+WHERE schema_name = '__schema__';

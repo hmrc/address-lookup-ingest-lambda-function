@@ -1,7 +1,11 @@
 from os import listdir, chdir, path
 from time import time, gmtime, strftime
+
+import select
+
 from split_abp_files import createCSV
 import psycopg2
+import psycopg2.extensions
 from credstash import getSecret
 
 
@@ -23,12 +27,8 @@ def ingest_handler(batch_info, context):
     ingest_files(db_schema_name, batch_dir)
 
 
-def create_lookup_view_handler(db_schema_name, context):
-    create_lookup_view(db_schema_name)
-
-
-def create_indexes_handler(db_schema_name, context):
-    create_indexes(db_schema_name)
+def create_lookup_view_and_indexes_handler(db_schema_name, context):
+    create_lookup_view_and_indexes(db_schema_name)
 
 
 def base_epoch_dir(base_dir):
@@ -84,25 +84,13 @@ def ingest_files(db_schema_name, batch_dir):
     epoch_schema_con.close()
 
 
-def create_indexes(db_schema_name):
-    print("Creating indexes for {}".format(db_schema_name))
-    indexes_sql = read_db_indexes_sql(db_schema_name)
-
-    with epoch_schema_connection(db_schema_name) as epoch_schema_con:
-        with epoch_schema_con.cursor() as cur:
-            create_db_indexes(epoch_schema_con, cur, indexes_sql)
-
-    epoch_schema_con.commit()
-    epoch_schema_con.close()
-
-
-def create_lookup_view(db_schema_name):
+def create_lookup_view_and_indexes(db_schema_name):
     print("Creating lookup_view {}".format(db_schema_name))
-    indexes_sql = read_db_indexes_sql(db_schema_name)
+    lookup_view_sql = read_db_lookup_view_and_indexes_sql(db_schema_name)
 
-    with epoch_schema_connection(db_schema_name) as epoch_schema_con:
+    with async_epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
-            create_db_indexes(epoch_schema_con, cur, indexes_sql)
+            cur.execute(lookup_view_sql)
 
     epoch_schema_con.commit()
     epoch_schema_con.close()
@@ -134,6 +122,36 @@ def default_connection():
 
 def epoch_schema_connection(epoch):
     return create_connection('-c search_path={}'.format(epoch))
+
+
+def async_epoch_schema_connection(epoch):
+    return create_async_connection('-c search_path={}'.format(epoch))
+
+
+def wait(conn):
+    while True:
+        state = conn.poll()
+        if state == psycopg2.extensions.POLL_OK:
+            break
+        elif state == psycopg2.extensions.POLL_WRITE:
+            select.select([], [conn.fileno()], [])
+        elif state == psycopg2.extensions.POLL_READ:
+            select.select([conn.fileno()], [], [])
+        else:
+            raise psycopg2.OperationalError("poll() returned %s" % state)
+
+
+def create_async_connection(options):
+    con_params = db_con_params(options,
+                               getSecret('address_lookup_rds_password',
+                                                  context={'role': 'address_lookup_file_download'}),
+                               getSecret('address_lookup_db_host',
+                                         context={'role': 'address_lookup_file_download'})
+                               )
+    conn = psycopg2.connect(host=con_params['host'], port=con_params['port'], database=con_params['database'], user=con_params['user'],
+                               password=con_params['password'], async=1, options=con_params['options'])
+    wait(conn)
+    return conn
 
 
 def create_connection(options):
@@ -180,8 +198,8 @@ def read_db_indexes_sql(db_schema_name):
     return sql
 
 
-def read_db_lookup_view_sql(db_schema_name):
-    sql = open('create_db_lookup_view.sql', 'r').read().replace("__schema__", db_schema_name)
+def read_db_lookup_view_and_indexes_sql(db_schema_name):
+    sql = open('create_db_lookup_view_and_indexes.sql', 'r').read().replace("__schema__", db_schema_name)
     return sql
 
 
