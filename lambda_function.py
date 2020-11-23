@@ -31,6 +31,20 @@ def create_lookup_view_and_indexes_handler(db_schema_name, context):
     create_lookup_view_and_indexes(db_schema_name)
 
 
+# noinspection SqlResolve
+def check_status_handler(db_schema_name, context):
+    with epoch_schema_connection(db_schema_name) as epoch_schema_con:
+        with epoch_schema_con.cursor() as cur:
+            cur.execute("""SELECT status FROM public.address_lookup_status WHERE schema_name = %s""",
+                        (db_schema_name,))
+            status = cur.fetchone()[0] #If not rows found then error will be raised
+
+    epoch_schema_con.commit()
+    epoch_schema_con.close()
+
+    return status
+
+
 def base_epoch_dir(base_dir):
     if not path.exists(base_dir):
         print("{} directory does not exist - finishing.".format(base_dir))
@@ -173,7 +187,7 @@ def create_connection(options):
 
 def db_con_params(options, password, host):
     return {
-        "host": host,
+        "host": "localhost", #host,
         "port": 5432,
         "database": "addressbasepremium",
         "user": "root",
@@ -234,4 +248,5 @@ def insert_data_into_table(db_cur, table, file):
 
 if __name__ == "__main__":
     # process_handler(None, None)
-    ingest_handler(None, None)
+    status = check_status_handler("ab79_20201120_161341", None)
+    print("status: {}".format(status))
