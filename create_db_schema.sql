@@ -220,7 +220,7 @@ CREATE TABLE __schema__.abp_successor (
 -- created
 -- ingesting
 -- completed
-CREATE TABLE public.address_lookup_status (
+CREATE TABLE IF NOT EXISTS public.address_lookup_status (
     schema_name varchar(64) not null primary key,
     status      varchar(32) not null
 );
