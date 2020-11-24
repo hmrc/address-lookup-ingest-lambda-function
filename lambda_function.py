@@ -103,8 +103,12 @@ def create_lookup_view_and_indexes(db_schema_name):
     lookup_view_sql = read_db_lookup_view_and_indexes_sql(db_schema_name)
 
     epoch_schema_con = async_epoch_schema_connection(db_schema_name)
-    with epoch_schema_con.cursor() as cur:
-        cur.execute(lookup_view_sql)
+
+    try:
+        with epoch_schema_con.cursor() as cur:
+            cur.execute(lookup_view_sql)
+    except Exception, e:
+        print 'There was a warning.  This is the info we have about it: %s' %(e)
 
 
 def init_schema(db_schema_name):
