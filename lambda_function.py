@@ -1,12 +1,13 @@
-from os import listdir, chdir, path
+from os import chdir
 from time import time, gmtime, strftime
 
-import select
-
-from split_abp_files import createCSV
 import psycopg2
 import psycopg2.extensions
+import select
 from credstash import getSecret
+from psycopg2 import sql
+
+from split_abp_files import createCSV
 
 
 # batch_path is the full path to the batch directory, eg <root>/abp/79/2
@@ -39,26 +40,9 @@ def check_status_handler(db_schema_name, context):
                         (db_schema_name,))
             status = cur.fetchone()[0] #If not rows found then error will be raised
 
-    epoch_schema_con.commit()
     epoch_schema_con.close()
 
     return status
-
-
-def base_epoch_dir(base_dir):
-    if not path.exists(base_dir):
-        print("{} directory does not exist - finishing.".format(base_dir))
-        return None
-
-    epochs_available = [int(x) for x in listdir(base_dir)]
-    epochs_available.sort(reverse=True)
-    if len(epochs_available) > 0:
-        latest_epoch = epochs_available[0]
-        epoch_base_dir = base_dir + "/{}".format(latest_epoch)
-        return str(latest_epoch), epoch_base_dir
-    else:
-        print("No epochs available to process - finishing.")
-        return None
 
 
 # This will get called with the batch directory
@@ -79,9 +63,10 @@ def create_schema(epoch):
     db_schema_name = strftime("ab{}".format(epoch) + "_%Y%m%d_%H%M%S", gmtime())
     print("Using schema name {}".format(db_schema_name))
 
+    clean_status_table()
     init_schema(db_schema_name)
     schema_sql = read_db_schema_sql(db_schema_name)
-    populate_schema(db_schema_name, schema_sql)
+    create_schema_objects(db_schema_name, schema_sql)
 
     return db_schema_name
 
@@ -111,6 +96,36 @@ def create_lookup_view_and_indexes(db_schema_name):
         print 'There was a warning.  This is the info we have about it: %s' %(e)
 
 
+def clean_status_table():
+    with default_connection() as default_con:
+        with default_con.cursor() as cur:
+            def drop_schema(schema_to_drop):
+                cur.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE".format(schema_to_drop)))
+
+            schemas_to_drop = get_schemas_to_drop(cur)
+            map(drop_schema, schemas_to_drop)
+
+    default_con.close()
+    return schemas_to_drop
+
+
+# noinspection SqlResolve
+def get_schemas_to_drop(db_cur):
+    db_cur.execute(
+     """SELECT schema_name
+        FROM public.address_lookup_status
+        WHERE schema_name NOT IN (
+            SELECT schema_name
+            FROM public.address_lookup_status
+            WHERE status = 'completed'
+            ORDER BY timestamp DESC
+            LIMIT 1
+        );""")
+
+    schemas_to_drop = db_cur.fetchall()
+    return map(lambda st: st[0], schemas_to_drop)
+
+
 def init_schema(db_schema_name):
     print("Creating schema {}".format(db_schema_name))
     with default_connection() as default_con:
@@ -120,7 +135,7 @@ def init_schema(db_schema_name):
     default_con.close()
 
 
-def populate_schema(db_schema_name, schema_sql):
+def create_schema_objects(db_schema_name, schema_sql):
     print("Populating schema with tables {}".format(db_schema_name))
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
@@ -248,4 +263,4 @@ def insert_data_into_table(db_cur, table, file):
 if __name__ == "__main__":
     # process_handler(None, None)
     # create_lookup_view_and_indexes_handler("ab79_20201120_161341", None)
-    print(check_status_handler("ab79_20201120_161341", None))
+    print(clean_status_table())

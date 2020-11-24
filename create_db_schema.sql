@@ -160,30 +160,30 @@ CREATE TABLE __schema__.abp_organisation (
 
 CREATE TABLE __schema__.abp_street
 (
-    RECORD_IDENTIFIER smallint,
-    CHANGE_TYPE character varying(1),
-    PRO_ORDER bigint,
-    USRN integer,
-    RECORD_TYPE smallint,
-    SWA_ORG_REF_NAMING smallint,
-    STATE smallint,
-    STATE_DATE date,
-    STREET_SURFACE smallint,
-    STREET_CLASSIFICATION smallint,
-    VERSION smallint,
-    STREET_START_DATE date,
-    STREET_END_DATE date,
-    LAST_UPDATE_DATE date,
-    RECORD_ENTRY_DATE date,
-    STREET_START_X double precision,
-    STREET_START_Y double precision,
-    STREET_START_LAT double precision,
-    STREET_START_LONG double precision,
-    STREET_END_X double precision,
-    STREET_END_Y double precision,
-    STREET_END_LAT double precision,
-    STREET_END_LONG double precision,
-    STREET_TOLERANCE smallint
+    RECORD_IDENTIFIER SMALLINT,
+    CHANGE_TYPE CHARACTER VARYING(1),
+    PRO_ORDER BIGINT,
+    USRN INTEGER,
+    RECORD_TYPE SMALLINT,
+    SWA_ORG_REF_NAMING SMALLINT,
+    STATE SMALLINT,
+    STATE_DATE DATE,
+    STREET_SURFACE SMALLINT,
+    STREET_CLASSIFICATION SMALLINT,
+    VERSION SMALLINT,
+    STREET_START_DATE DATE,
+    STREET_END_DATE DATE,
+    LAST_UPDATE_DATE DATE,
+    RECORD_ENTRY_DATE DATE,
+    STREET_START_X DOUBLE PRECISION,
+    STREET_START_Y DOUBLE PRECISION,
+    STREET_START_LAT DOUBLE PRECISION,
+    STREET_START_LONG DOUBLE PRECISION,
+    STREET_END_X DOUBLE PRECISION,
+    STREET_END_Y DOUBLE PRECISION,
+    STREET_END_LAT DOUBLE PRECISION,
+    STREET_END_LONG DOUBLE PRECISION,
+    STREET_TOLERANCE SMALLINT
 );
 
 --Street Descriptor
@@ -197,10 +197,10 @@ CREATE TABLE __schema__.abp_street_descriptor (
                                        TOWN_NAME CHARACTER VARYING(30),
                                        ADMINISTRATIVE_AREA CHARACTER VARYING(30),
                                        LANGUAGE CHARACTER VARYING(3),
-                                       START_DATE date,
-                                       END_DATE date,
-                                       LAST_UPDATE_DATE date,
-                                       ENTRY_DATE date
+                                       START_DATE DATE,
+                                       END_DATE DATE,
+                                       LAST_UPDATE_DATE DATE,
+                                       ENTRY_DATE DATE
 );
 
 --Successor Records
@@ -217,11 +217,10 @@ CREATE TABLE __schema__.abp_successor (
                                SUCCESSOR BIGINT
 );
 
--- created
--- ingesting
--- completed
+
 CREATE TABLE IF NOT EXISTS public.address_lookup_status (
-    schema_name varchar(64) not null primary key,
-    status      varchar(32) not null
+    schema_name VARCHAR(64) NOT NULL PRIMARY KEY,
+    status      VARCHAR(32) NOT NULL,
+    timestamp   TIMESTAMP NOT NULL
 );
-INSERT INTO public.address_lookup_status(schema_name, status) VALUES('__schema__', 'schema_created');
+INSERT INTO public.address_lookup_status(schema_name, status) VALUES('__schema__', 'schema_created', now());

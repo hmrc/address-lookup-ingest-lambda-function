@@ -1,6 +1,6 @@
 BEGIN TRANSACTION;
 UPDATE public.address_lookup_status
-SET status = 'creating_view'
+SET status = 'creating_view', timestamp = now()
 WHERE schema_name = '__schema__';
 SAVEPOINT ingesting;
 
@@ -66,7 +66,7 @@ FROM __schema__.abp_delivery_point d
          JOIN __schema__.abp_street_descriptor asd on l.usrn = asd.usrn;
 
 UPDATE public.address_lookup_status
-SET status = 'view_created'
+SET status = 'view_created', timestamp = now()
 WHERE schema_name = '__schema__';
 SAVEPOINT view_created;
 
@@ -74,7 +74,7 @@ CREATE INDEX IF NOT EXISTS address_lookup_ft_col_idx
     ON __schema__.address_lookup USING gin (address_lookup_ft_col);
 
 UPDATE public.address_lookup_status
-SET status = 'gin_index_created'
+SET status = 'gin_index_created', timestamp = now()
 WHERE schema_name = '__schema__';
 SAVEPOINT gin_index_created;
 
@@ -83,7 +83,7 @@ CREATE INDEX IF NOT EXISTS address_lookup_postcode_idx
     ON __schema__.address_lookup (postcode);
 
 UPDATE public.address_lookup_status
-SET status = 'postcode_index_created'
+SET status = 'postcode_index_created', timestamp = now()
 WHERE schema_name = '__schema__';
 SAVEPOINT postcode_index_created;
 
@@ -91,11 +91,11 @@ CREATE OR REPLACE VIEW public.address_lookup
 AS SELECT * FROM __schema__.address_lookup;
 
 UPDATE public.address_lookup_status
-SET status = 'public_view_created'
+SET status = 'public_view_created', timestamp = now()
 WHERE schema_name = '__schema__';
 SAVEPOINT public_view_created;
 
 UPDATE public.address_lookup_status
-SET status = 'completed'
+SET status = 'completed', timestamp = now()
 WHERE schema_name = '__schema__';
 COMMIT;
