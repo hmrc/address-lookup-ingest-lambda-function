@@ -182,7 +182,7 @@ def create_connection(options):
 
 def db_con_params(options, password, host):
     return {
-        "host": "localhost", #host,
+        "host": host,
         "port": 5432,
         "database": "addressbasepremium",
         "user": "root",
