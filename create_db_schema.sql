@@ -223,4 +223,4 @@ CREATE TABLE IF NOT EXISTS public.address_lookup_status (
     status      VARCHAR(32) NOT NULL,
     timestamp   TIMESTAMP NOT NULL
 );
-INSERT INTO public.address_lookup_status(schema_name, status) VALUES('__schema__', 'schema_created', now());
+INSERT INTO public.address_lookup_status VALUES('__schema__', 'schema_created', now());
