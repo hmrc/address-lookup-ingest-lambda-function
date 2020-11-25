@@ -43,23 +43,19 @@ SELECT array_to_string(ARRAY [btrim(d.sub_building_name::text), btrim(d.building
        concat(b.latitude, ',', b.longitude)                                                                AS location,
        d.po_box_number                                                                                     AS poboxnumber,
        asd.administrative_area                                                                             AS localAuthority,
-       to_tsvector('english'::regconfig, ((COALESCE(array_to_string(
-                                                            ARRAY [btrim(d.sub_building_name::text), btrim(d.building_name::text)],
-                                                            ', '::text), ''::text) || COALESCE(array_to_string(
-                                                                                                       ARRAY [btrim(''::text || d.building_number), btrim(d.dependent_thoroughfare::text), btrim(d.thoroughfare::text)],
-                                                                                                       ' '::text),
-                                                                                               ''::text)) || COALESCE(
-                                                  array_to_string(
-                                                          ARRAY [btrim(d.double_dependent_locality::text), btrim(d.dependent_locality::text)],
-                                                          ' '::text), ''::text)) || COALESCE(
-                                                 CASE
-                                                     WHEN b.country::text = 'S'::text THEN 'GB-SCT'::text
-                                                     WHEN b.country::text = 'E'::text THEN 'GB-ENG'::text
-                                                     WHEN b.country::text = 'W'::text THEN 'GB-WLS'::text
-                                                     WHEN b.country::text = 'N'::text THEN 'GB-NIR'::text
-                                                     ELSE NULL::text
-                                                     END,
-                                                 ''::text))                                                AS address_lookup_ft_col
+       to_tsvector('english'::regconfig, array_to_string(
+               ARRAY [
+                   btrim(d.sub_building_name::text),
+                   btrim(d.building_name::text),
+                   btrim(d.building_number::text),
+                   btrim(d.dependent_thoroughfare::text),
+                   btrim(d.thoroughfare::text),
+                   btrim(d.posttown::text),
+                   btrim(d.double_dependent_locality::text),
+                   btrim(d.dependent_locality::text),
+                   btrim(asd.administrative_area::text),
+                   btrim(d.po_box_number::text)],
+               ' '::text))                                   AS address_lookup_ft_col
 FROM __schema__.abp_delivery_point d
          JOIN __schema__.abp_blpu b ON b.uprn = d.uprn
          JOIN __schema__.abp_lpi l ON l.uprn = b.uprn
