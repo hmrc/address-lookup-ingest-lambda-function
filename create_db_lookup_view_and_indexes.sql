@@ -50,7 +50,7 @@ SELECT array_to_string(ARRAY [btrim(d.sub_building_name::text), btrim(d.building
                    btrim(d.building_number::text),
                    btrim(d.dependent_thoroughfare::text),
                    btrim(d.thoroughfare::text),
-                   btrim(d.posttown::text),
+                   btrim(d.post_town::text),
                    btrim(d.double_dependent_locality::text),
                    btrim(d.dependent_locality::text),
                    btrim(asd.administrative_area::text),
