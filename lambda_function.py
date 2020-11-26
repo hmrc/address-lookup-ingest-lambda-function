@@ -1,5 +1,6 @@
-from os import chdir
+from os import chdir, path, walk, remove
 from time import time, gmtime, strftime
+from shutil import rmtree
 
 import psycopg2
 import psycopg2.extensions
@@ -68,6 +69,15 @@ def check_status_handler(db_schema_name, context):
     return status
 
 
+def cleanup_handler(epoch, context):
+    """
+    Handler for cleaning up the filesystem
+    :param batch_parent_dir: parent directory of batch directories
+    """
+    cleanup_old_epoch_directories(epoch)
+    cleanup_processed_csvs(epoch)
+
+
 # This will get called with the batch directory
 def process_files(batch_dir):
     print("Processing files in dir: {}".format(batch_dir))
@@ -132,6 +142,34 @@ def clean_status_table():
 
     default_con.close()
     return schemas_to_drop
+
+
+root_dir = '/mnt/efs/'
+
+
+def cleanup_old_epoch_directories(latest_epoch):
+    """
+    Cleans all epoch dirs that are not latest_epoch
+    :param latest_epoch:
+    """
+    (dirname, dir_names, filenames) = walk(root_dir).next()
+    for d in dir_names:
+        if d != latest_epoch:
+            rmtree(path.join(dirname, d))
+
+
+# <root>/<product>/<epoch>/<batch_dir>
+def cleanup_processed_csvs(epoch):
+    """
+    Deletes all *.csv files anywhere in the tree
+    :param epoch: the latest epoch
+    """
+    epoch_dir = root_dir + epoch
+
+    for (dirname, dir_names, filenames) in walk(epoch_dir):
+        for f in filenames:
+            if f.endswith('.csv') or f == 'processing.done':
+                remove(path.join(dirname, f))
 
 
 # noinspection SqlResolve
@@ -288,4 +326,4 @@ def insert_data_into_table(db_cur, table, file):
 if __name__ == "__main__":
     # process_handler(None, None)
     # create_lookup_view_and_indexes_handler("ab79_20201120_161341", None)
-    print(clean_status_table())
+    print(cleanup_handler('79', None))
