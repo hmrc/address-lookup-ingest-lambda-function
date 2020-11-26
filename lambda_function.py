@@ -96,7 +96,7 @@ def create_schema(epoch):
     db_schema_name = strftime("ab{}".format(epoch) + "_%Y%m%d_%H%M%S", gmtime())
     print("Using schema name {}".format(db_schema_name))
 
-    clean_status_table()
+    ensure_status_table()
     init_schema(db_schema_name)
     schema_sql = read_db_schema_sql(db_schema_name)
     create_schema_objects(db_schema_name, schema_sql)
@@ -126,13 +126,18 @@ def create_lookup_view_and_indexes(db_schema_name):
         with epoch_schema_con.cursor() as cur:
             cur.execute(lookup_view_sql)
     except Exception, e:
-        print 'There was a warning.  This is the info we have about it: %s' % (e)
+        print('There was a warning.  This is the info we have about it: %s' % e)
 
 
-def clean_status_table():
+def ensure_status_table():
     with default_connection() as default_con:
         with default_con.cursor() as cur:
+            print("Creating status table if it does not exist...")
+            lookup_view_sql = open('create_status_table.sql', 'r').read()
+            cur.execute(lookup_view_sql)
+
             def drop_schema(schema_to_drop):
+                print("Dropping old schema {}".format(schema_to_drop))
                 sql_to_execute = """DROP SCHEMA IF EXISTS {} CASCADE; 
                     DELETE FROM public.address_lookup_status WHERE schema_name = '{}';"""
                 cur.execute(sql.SQL(sql_to_execute.format(schema_to_drop, schema_to_drop)))
@@ -203,8 +208,9 @@ def create_schema_objects(db_schema_name, schema_sql):
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
+            cur.execute("INSERT INTO public.address_lookup_status VALUES(%s, 'schema_created', now());""", (db_schema_name,))
 
-    epoch_schema_con.close()
+    epoch_schema_con.close();
 
 
 def default_connection():

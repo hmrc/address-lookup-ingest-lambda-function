@@ -216,11 +216,3 @@ CREATE TABLE __schema__.abp_successor (
                                ENTRY_DATE DATE,
                                SUCCESSOR BIGINT
 );
-
-
-CREATE TABLE IF NOT EXISTS public.address_lookup_status (
-    schema_name VARCHAR(64) NOT NULL PRIMARY KEY,
-    status      VARCHAR(32) NOT NULL,
-    timestamp   TIMESTAMP NOT NULL
-);
-INSERT INTO public.address_lookup_status VALUES('__schema__', 'schema_created', now());
