@@ -1,6 +1,7 @@
 from os import chdir, path, walk, remove
 from time import time, gmtime, strftime
 from shutil import rmtree
+import boto3
 
 import psycopg2
 import psycopg2.extensions
@@ -9,6 +10,10 @@ from credstash import getSecret
 from psycopg2 import sql
 
 from split_abp_files import createCSV
+
+
+root_dir = '/mnt/efs/'
+credstash_context = {'role': 'address_lookup_file_download'}
 
 
 def process_handler(batch_info, context):
@@ -149,9 +154,6 @@ def ensure_status_table():
     return schemas_to_drop
 
 
-root_dir = '/mnt/efs/'
-
-
 def cleanup_old_epoch_directories(latest_epoch):
     """
     Cleans all epoch dirs that are not latest_epoch
@@ -217,12 +219,12 @@ def default_connection():
     return create_connection('')
 
 
-def epoch_schema_connection(epoch):
-    return create_connection('-c search_path={}'.format(epoch))
+def epoch_schema_connection(db_schema_name):
+    return create_connection('-c search_path={}'.format(db_schema_name))
 
 
-def async_epoch_schema_connection(epoch):
-    return create_async_connection('-c search_path={}'.format(epoch))
+def async_epoch_schema_connection(db_schema_name):
+    return create_async_connection('-c search_path={}'.format(db_schema_name))
 
 
 def wait(conn):
@@ -239,12 +241,7 @@ def wait(conn):
 
 
 def create_async_connection(options):
-    con_params = db_con_params(options,
-                               getSecret('address_lookup_rds_password',
-                                         context={'role': 'address_lookup_file_download'}),
-                               getSecret('address_lookup_db_host',
-                                         context={'role': 'address_lookup_file_download'})
-                               )
+    con_params = db_con_params(options)
     conn = psycopg2.connect(host=con_params['host'], port=con_params['port'], database=con_params['database'], user=con_params['user'],
                             password=con_params['password'], async=1, options=con_params['options'])
     wait(conn)
@@ -252,12 +249,7 @@ def create_async_connection(options):
 
 
 def create_connection(options):
-    con_params = db_con_params(options,
-                               getSecret('address_lookup_rds_password',
-                                         context={'role': 'address_lookup_file_download'}),
-                               getSecret('address_lookup_db_host',
-                                         context={'role': 'address_lookup_file_download'})
-                               )
+    con_params = db_con_params(options)
     return psycopg2.connect(
         host=con_params['host'],
         port=con_params['port'],
@@ -268,14 +260,19 @@ def create_connection(options):
     )
 
 
-def db_con_params(options, password, host):
+def db_con_params(options):
+    client = boto3.client('rds')
+    db_host = getSecret('address_lookup_rds_host', credstash_context)
+    db_name = getSecret('address_lookup_rds_database', credstash_context)
+    db_user = getSecret('address_lookup_rds_user', credstash_context)
+    token = client.generate_db_auth_token(DBHostname=db_host, Port=5432, DBUsername=db_user, Region='eu-west-2')
+
     return {
-        "host": host,
+        "host": db_host,
         "port": 5432,
-        "database": "addressbasepremium",
-        "user"    : "root",
-        "password": password,
-        "options" : options
+        "database": db_name,
+        "user"    : db_user,
+        "password": token
     }
 
 
@@ -332,4 +329,4 @@ def insert_data_into_table(db_cur, table, file):
 if __name__ == "__main__":
     # process_handler(None, None)
     # create_lookup_view_and_indexes_handler("ab79_20201120_161341", None)
-    print(cleanup_handler('79', None))
+    print(db_con_params(''))
