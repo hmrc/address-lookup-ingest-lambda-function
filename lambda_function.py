@@ -269,7 +269,7 @@ def create_init_connection():
         port=con_params['port'],
         database=con_params['database'],
         user=con_params['user'],
-        password=getSecret('address_lookup_rds_password', credstash_context),
+        password=getSecret('address_lookup_rds_password', context=credstash_context),
     )
 
 
@@ -287,9 +287,9 @@ def create_connection(options):
 
 def db_con_params(options):
     client = boto3.client('rds')
-    db_host = getSecret('address_lookup_rds_host', credstash_context)
-    db_name = getSecret('address_lookup_rds_database', credstash_context)
-    db_user = getSecret('address_lookup_rds_user', credstash_context)
+    db_host = getSecret('address_lookup_rds_host', context=credstash_context)
+    db_name = getSecret('address_lookup_rds_database', context=credstash_context)
+    db_user = getSecret('address_lookup_rds_user', context=credstash_context)
     token = client.generate_db_auth_token(DBHostname=db_host, Port=5432, DBUsername=db_user, Region='eu-west-2')
 
     return {
@@ -355,4 +355,4 @@ def insert_data_into_table(db_cur, table, file):
 if __name__ == "__main__":
     # process_handler(None, None)
     # create_lookup_view_and_indexes_handler("ab79_20201120_161341", None)
-    print(dbuser_init_handler('', None))
+    print(create_schema('79'))
