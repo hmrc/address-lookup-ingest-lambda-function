@@ -11,9 +11,17 @@ from psycopg2 import sql
 
 from split_abp_files import createCSV
 
-
 root_dir = '/mnt/efs/'
 credstash_context = {'role': 'address_lookup_file_download'}
+
+
+def dbuser_init_handler(nothing, context):
+    with initial_connection() as epoch_schema_con:
+        with epoch_schema_con.cursor() as cur:
+            cur.execute("""
+                CREATE USER addresslookupingester;
+                GRANT rds_iam TO addresslookupingester;
+            """)
 
 
 def process_handler(batch_info, context):
@@ -77,7 +85,7 @@ def check_status_handler(db_schema_name, context):
 def cleanup_handler(epoch, context):
     """
     Handler for cleaning up the filesystem
-    :param batch_parent_dir: parent directory of batch directories
+    :param epoch:
     """
     cleanup_old_epoch_directories(epoch)
     cleanup_processed_csvs(epoch)
@@ -210,9 +218,14 @@ def create_schema_objects(db_schema_name, schema_sql):
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
-            cur.execute("INSERT INTO public.address_lookup_status VALUES(%s, 'schema_created', now());""", (db_schema_name,))
+            cur.execute("INSERT INTO public.address_lookup_status VALUES(%s, 'schema_created', now());""",
+                        (db_schema_name,))
 
-    epoch_schema_con.close();
+    epoch_schema_con.close()
+
+
+def initial_connection():
+    return create_init_connection()
 
 
 def default_connection():
@@ -242,10 +255,22 @@ def wait(conn):
 
 def create_async_connection(options):
     con_params = db_con_params(options)
-    conn = psycopg2.connect(host=con_params['host'], port=con_params['port'], database=con_params['database'], user=con_params['user'],
+    conn = psycopg2.connect(host=con_params['host'], port=con_params['port'], database=con_params['database'],
+                            user=con_params['user'],
                             password=con_params['password'], async=1, options=con_params['options'])
     wait(conn)
     return conn
+
+
+def create_init_connection():
+    con_params = db_con_params('')
+    return psycopg2.connect(
+        host=con_params['host'],
+        port=con_params['port'],
+        database=con_params['database'],
+        user=con_params['user'],
+        password=getSecret('address_lookup_rds_password', credstash_context),
+    )
 
 
 def create_connection(options):
@@ -268,11 +293,12 @@ def db_con_params(options):
     token = client.generate_db_auth_token(DBHostname=db_host, Port=5432, DBUsername=db_user, Region='eu-west-2')
 
     return {
-        "host": db_host,
-        "port": 5432,
+        "host"    : db_host,
+        "port"    : 5432,
         "database": db_name,
         "user"    : db_user,
-        "password": token
+        "password": token,
+        "options" : options
     }
 
 
@@ -283,18 +309,18 @@ def create_db_schema(db_con, db_cur, schema_name):
 
 # This is a little hacky - need to think about a better way to inject the schema name into the schema file.
 def read_db_schema_sql(db_schema_name):
-    sql = open('create_db_schema.sql', 'r').read().replace("__schema__", db_schema_name)
-    return sql
+    sqlString = open('create_db_schema.sql', 'r').read().replace("__schema__", db_schema_name)
+    return sqlString
 
 
 def read_db_indexes_sql(db_schema_name):
-    sql = open('create_db_schema_indexes.sql', 'r').read().replace("__schema__", db_schema_name)
-    return sql
+    sqlString = open('create_db_schema_indexes.sql', 'r').read().replace("__schema__", db_schema_name)
+    return sqlString
 
 
 def read_db_lookup_view_and_indexes_sql(db_schema_name):
-    sql = open('create_db_lookup_view_and_indexes.sql', 'r').read().replace("__schema__", db_schema_name)
-    return sql
+    sqlString = open('create_db_lookup_view_and_indexes.sql', 'r').read().replace("__schema__", db_schema_name)
+    return sqlString
 
 
 def create_db_schema_objects(db_conn, db_cur, schema_sql):
@@ -329,4 +355,4 @@ def insert_data_into_table(db_cur, table, file):
 if __name__ == "__main__":
     # process_handler(None, None)
     # create_lookup_view_and_indexes_handler("ab79_20201120_161341", None)
-    print(db_con_params(''))
+    print(dbuser_init_handler('', None))
