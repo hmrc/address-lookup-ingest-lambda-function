@@ -18,10 +18,7 @@ credstash_context = {'role': 'address_lookup_file_download'}
 def dbuser_init_handler(nothing, context):
     with initial_connection() as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
-            cur.execute("""
-                CREATE USER addresslookupingester;
-                GRANT rds_iam TO addresslookupingester;
-            """)
+            dbuser_init(cur)
 
 
 def process_handler(batch_info, context):
@@ -89,6 +86,16 @@ def cleanup_handler(epoch, context):
     """
     cleanup_old_epoch_directories(epoch)
     cleanup_processed_csvs(epoch)
+
+
+def dbuser_init(db_cur):
+    db_user = getSecret('address_lookup_rds_user', context=credstash_context)
+    db_name = getSecret('address_lookup_rds_database', context=credstash_context)
+    db_cur.execute(sql.SQL("""
+        CREATE USER {};
+        GRANT rds_iam TO {};
+        GRANT ALL ON DATABASE {} to {};
+    """.format(db_user, db_user, db_name, db_user)))
 
 
 # This will get called with the batch directory
@@ -268,7 +275,7 @@ def create_init_connection():
         host=con_params['host'],
         port=con_params['port'],
         database=con_params['database'],
-        user=con_params['user'],
+        user='root',
         password=getSecret('address_lookup_rds_password', context=credstash_context),
     )
 
