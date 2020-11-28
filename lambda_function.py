@@ -232,7 +232,7 @@ def create_schema_objects(db_schema_name, schema_sql):
 
 
 def initial_connection():
-    return create_init_connection()
+    return initial_connection_connection()
 
 
 def default_connection():
@@ -262,21 +262,26 @@ def wait(conn):
 
 def create_async_connection(options):
     con_params = db_con_params(options)
-    conn = psycopg2.connect(host=con_params['host'], port=con_params['port'], database=con_params['database'],
-                            user=con_params['user'],
-                            password=con_params['password'], async=1, options=con_params['options'])
+    conn = psycopg2.connect(
+        host=con_params['host'],
+        port=con_params['port'],
+        database=con_params['database'],
+        user=con_params['user'],
+        password=con_params['password'],
+        async=1,
+        options=con_params['options'])
     wait(conn)
     return conn
 
 
-def create_init_connection():
-    con_params = db_con_params('')
+def initial_connection_connection():
+    con_params = db_initial_con_params()
     return psycopg2.connect(
         host=con_params['host'],
         port=con_params['port'],
         database=con_params['database'],
-        user='root',
-        password=getSecret('address_lookup_rds_password', context=credstash_context),
+        user=con_params['user'],
+        password=con_params['password'],
     )
 
 
@@ -306,6 +311,22 @@ def db_con_params(options):
         "user"    : db_user,
         "password": token,
         "options" : options
+    }
+
+
+def db_initial_con_params():
+    client = boto3.client('rds')
+    db_host = getSecret('address_lookup_rds_host', context=credstash_context)
+    db_name = getSecret('address_lookup_rds_database', context=credstash_context)
+    db_admin_user = getSecret('address_lookup_rds_admin_user', context=credstash_context)
+    db_admin_password = getSecret('address_lookup_rds_admin_password', context=credstash_context)
+
+    return {
+        "host"    : db_host,
+        "port"    : 5432,
+        "database": db_name,
+        "user"    : db_admin_user,
+        "password": db_admin_password
     }
 
 
