@@ -16,7 +16,7 @@ credstash_context = {'role': 'address_lookup_file_download'}
 
 
 def dbuser_init_handler(nothing, context):
-    with initial_connection() as epoch_schema_con:
+    with initial_connection_connection() as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
             dbuser_init(cur)
 
@@ -91,11 +91,15 @@ def cleanup_handler(epoch, context):
 def dbuser_init(db_cur):
     db_user = getSecret('address_lookup_rds_ingest_user', context=credstash_context)
     db_name = getSecret('address_lookup_rds_database', context=credstash_context)
-    db_cur.execute(sql.SQL("""
-        CREATE USER {};
-        GRANT rds_iam TO {};
-        GRANT ALL ON DATABASE {} to {};
-    """.format(db_user, db_user, db_name, db_user)))
+    db_cur.execute("SELECT * FROM pg_user WHERE usename = %s", (db_user,))
+    existing_user = db_cur.fetchone()
+    if existing_user is None:
+        print("Creating application user")
+        db_cur.execute(sql.SQL("""
+            CREATE USER {};
+            GRANT rds_iam TO {};
+            GRANT ALL ON DATABASE {} to {};
+        """.format(db_user, db_user, db_name, db_user)))
 
 
 # This will get called with the batch directory
@@ -275,13 +279,17 @@ def create_async_connection(options):
 
 
 def initial_connection_connection():
-    con_params = db_initial_con_params()
+    db_host = getSecret('address_lookup_rds_host', context=credstash_context)
+    db_name = getSecret('address_lookup_rds_database', context=credstash_context)
+    db_admin_user = getSecret('address_lookup_rds_admin_user', context=credstash_context)
+    db_admin_password = getSecret('address_lookup_rds_admin_password', context=credstash_context)
+
     return psycopg2.connect(
-        host=con_params['host'],
-        port=con_params['port'],
-        database=con_params['database'],
-        user=con_params['user'],
-        password=con_params['password'],
+        host=db_host,
+        port=5432,
+        database=db_name,
+        user=db_admin_user,
+        password=db_admin_password
     )
 
 
@@ -314,20 +322,6 @@ def db_con_params(options):
     }
 
 
-def db_initial_con_params():
-    client = boto3.client('rds')
-    db_host = getSecret('address_lookup_rds_host', context=credstash_context)
-    db_name = getSecret('address_lookup_rds_database', context=credstash_context)
-    db_admin_user = getSecret('address_lookup_rds_admin_user', context=credstash_context)
-    db_admin_password = getSecret('address_lookup_rds_admin_password', context=credstash_context)
-
-    return {
-        "host"    : db_host,
-        "port"    : 5432,
-        "database": db_name,
-        "user"    : db_admin_user,
-        "password": db_admin_password
-    }
 
 
 def create_db_schema(db_con, db_cur, schema_name):
