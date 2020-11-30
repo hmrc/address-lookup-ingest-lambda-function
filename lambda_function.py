@@ -273,6 +273,8 @@ def create_async_connection(options):
         user=con_params['user'],
         password=con_params['password'],
         async=1,
+        sslmode=con_params['sslmode'],
+        sslrootcert=con_params['sslrootcert'],
         options=con_params['options'])
     wait(conn)
     return conn
@@ -289,7 +291,9 @@ def initial_connection_connection():
         port=5432,
         database=db_name,
         user=db_admin_user,
-        password=db_admin_password
+        password=db_admin_password,
+        sslmode="prefer",
+        sslrootcert="rds-combined-ca-bundle.pem"
     )
 
 
@@ -301,6 +305,8 @@ def create_connection(options):
         database=con_params['database'],
         user=con_params['user'],
         password=con_params['password'],
+        sslmode=con_params['sslmode'],
+        sslrootcert=con_params['sslrootcert'],
         options=con_params['options'],
     )
 
@@ -318,6 +324,8 @@ def db_con_params(options):
         "database": db_name,
         "user"    : db_user,
         "password": token,
+        "sslmode": "prefer",
+        "sslrootcert": "rds-combined-ca-bundle.pem",
         "options" : options
     }
 
