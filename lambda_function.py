@@ -89,7 +89,7 @@ def cleanup_handler(epoch, context):
 
 
 def dbuser_init(db_cur):
-    db_user = getSecret('address_lookup_rds_user', context=credstash_context)
+    db_user = getSecret('address_lookup_rds_ingest_user', context=credstash_context)
     db_name = getSecret('address_lookup_rds_database', context=credstash_context)
     db_cur.execute(sql.SQL("""
         CREATE USER {};
@@ -301,7 +301,7 @@ def db_con_params(options):
     client = boto3.client('rds')
     db_host = getSecret('address_lookup_rds_host', context=credstash_context)
     db_name = getSecret('address_lookup_rds_database', context=credstash_context)
-    db_user = getSecret('address_lookup_rds_user', context=credstash_context)
+    db_user = getSecret('address_lookup_rds_ingest_user', context=credstash_context)
     token = client.generate_db_auth_token(DBHostname=db_host, Port=5432, DBUsername=db_user, Region='eu-west-2')
 
     return {
