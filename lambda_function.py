@@ -96,10 +96,25 @@ def dbuser_init(db_cur):
     if existing_user is None:
         print("Creating application user")
         db_cur.execute(sql.SQL("""
+            REVOKE CREATE ON SCHEMA public FROM PUBLIC;
             CREATE USER {};
             GRANT rds_iam TO {};
             GRANT ALL ON DATABASE {} to {};
-        """.format(db_user, db_user, db_name, db_user)))
+            GRANT CREATE ON SCHEMA public TO {};
+        """.format(db_user, db_user, db_name, db_user, db_user)))
+
+    db_ro_user = getSecret('address_lookup_rds_readonly_user', context=credstash_context)
+    db_ro_password = getSecret('address_lookup_rds_readonly_password', context=credstash_context)
+    db_cur.execute("SELECT * FROM pg_user WHERE usename = %s", (db_ro_user,))
+    existing_user = db_cur.fetchone()
+    if existing_user is None:
+        print("Creating application user")
+        db_cur.execute(sql.SQL("""
+            CREATE USER {} ENCRYPTED PASSWORD {};
+            GRANT rds_iam TO {};
+            GRANT CONNECT ON DATABASE {} TO {};
+            GRANT SELECT ON public.address_lookup TO {};
+        """.format(db_ro_user, db_ro_password, db_ro_user, db_name, db_ro_user, db_ro_user)))
 
 
 # This will get called with the batch directory
