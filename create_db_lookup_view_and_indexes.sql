@@ -7,7 +7,8 @@ SAVEPOINT ingesting;
 DROP MATERIALIZED VIEW IF EXISTS __schema__.address_lookup;
 
 CREATE MATERIALIZED VIEW __schema__.address_lookup AS
-SELECT array_to_string(ARRAY [btrim(d.sub_building_name::text), btrim(d.building_name::text)], ', '::text) AS line1,
+SELECT b.uprn                                                                                              AS uprn,
+       array_to_string(ARRAY [btrim(d.sub_building_name::text), btrim(d.building_name::text)], ', '::text) AS line1,
        array_to_string(
                ARRAY [btrim(''::text || d.building_number), btrim(d.dependent_thoroughfare::text), btrim(d.thoroughfare::text)],
                ' '::text)                                                                                  AS line2,
@@ -55,11 +56,11 @@ SELECT array_to_string(ARRAY [btrim(d.sub_building_name::text), btrim(d.building
                    btrim(d.dependent_locality::text),
                    btrim(asd.administrative_area::text),
                    btrim(d.po_box_number::text)],
-               ' '::text))                                   AS address_lookup_ft_col
+               ' '::text))                                                                                  AS address_lookup_ft_col
 FROM __schema__.abp_delivery_point d
          JOIN __schema__.abp_blpu b ON b.uprn = d.uprn
          JOIN __schema__.abp_lpi l ON l.uprn = b.uprn
-         JOIN __schema__.abp_street_descriptor asd on l.usrn = asd.usrn;
+         JOIN __schema__.abp_street_descriptor asd ON l.usrn = asd.usrn;
 
 UPDATE public.address_lookup_status
 SET status = 'view_created', timestamp = now()
