@@ -110,7 +110,7 @@ def dbuser_init(db_cur):
     if existing_user is None:
         print("Creating application user")
         db_cur.execute(sql.SQL("""
-            CREATE USER {} ENCRYPTED PASSWORD {};
+            CREATE USER {} ENCRYPTED PASSWORD '{}';
             GRANT rds_iam TO {};
             GRANT CONNECT ON DATABASE {} TO {};
             GRANT SELECT ON public.address_lookup TO {};
