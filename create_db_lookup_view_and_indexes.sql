@@ -84,6 +84,14 @@ SET status = 'postcode_index_created', timestamp = now()
 WHERE schema_name = '__schema__';
 SAVEPOINT postcode_index_created;
 
+CREATE INDEX IF NOT EXISTS address_lookup_uprn_idx
+    ON __schema__.address_lookup (uprn);
+
+UPDATE public.address_lookup_status
+SET status = 'uprn_index_created', timestamp = now()
+WHERE schema_name = '__schema__';
+SAVEPOINT uprn_index_created;
+
 CREATE OR REPLACE VIEW public.address_lookup
 AS SELECT * FROM __schema__.address_lookup;
 
