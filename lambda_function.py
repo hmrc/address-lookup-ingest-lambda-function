@@ -111,7 +111,6 @@ def dbuser_init(db_cur):
         print("Creating application user")
         db_cur.execute(sql.SQL("""
             CREATE USER {} ENCRYPTED PASSWORD '{}';
-            GRANT rds_iam TO {};
             GRANT CONNECT ON DATABASE {} TO {};
             GRANT SELECT ON public.address_lookup TO {};
         """.format(db_ro_user, db_ro_password, db_ro_user, db_name, db_ro_user, db_ro_user)))
