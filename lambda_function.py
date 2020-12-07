@@ -157,7 +157,7 @@ def create_lookup_view_and_indexes(db_schema_name):
     print("Creating lookup_view {}".format(db_schema_name))
     lookup_view_sql = read_db_lookup_view_and_indexes_sql(db_schema_name)
 
-    epoch_schema_con = epoch_schema_connection(db_schema_name)
+    epoch_schema_con = async_epoch_schema_connection(db_schema_name)
 
     try:
         with epoch_schema_con.cursor() as cur:
