@@ -112,7 +112,6 @@ def dbuser_init(db_cur):
         db_cur.execute(sql.SQL("""
             CREATE USER {} ENCRYPTED PASSWORD '{}';
             GRANT CONNECT ON DATABASE {} TO {};
-            GRANT SELECT ON public.address_lookup TO {};
         """.format(db_ro_user, db_ro_password, db_name, db_ro_user, db_ro_user)))
 
 
@@ -314,11 +313,11 @@ def initial_connection_connection():
 def create_connection(options):
     con_params = db_con_params(options)
     return psycopg2.connect(
-        host='localhost', #con_params['host'],
+        host=con_params['host'],
         port=con_params['port'],
         database=con_params['database'],
         user=con_params['user'],
-        password='pa55w0rd123', #con_params['password'],
+        password=con_params['password'],
         sslmode=con_params['sslmode'],
         sslrootcert=con_params['sslrootcert'],
         options=con_params['options'],
@@ -330,7 +329,7 @@ def db_con_params(options):
     db_host = getSecret('address_lookup_rds_host', context=credstash_context)
     db_name = getSecret('address_lookup_rds_database', context=credstash_context)
     db_user = getSecret('address_lookup_rds_ingest_user', context=credstash_context)
-    token = client.generate_db_auth_token(DBHostname='localhost', Port=5432, DBUsername=db_user, Region='eu-west-2')
+    token = client.generate_db_auth_token(DBHostname=db_host, Port=5432, DBUsername=db_user, Region='eu-west-2')
 
     return {
         "host"    : db_host,
@@ -342,8 +341,6 @@ def db_con_params(options):
         "sslrootcert": "rds-combined-ca-bundle.pem",
         "options" : options
     }
-
-
 
 
 def create_db_schema(db_con, db_cur, schema_name):
