@@ -113,7 +113,7 @@ def dbuser_init(db_cur):
             CREATE USER {} ENCRYPTED PASSWORD '{}';
             GRANT CONNECT ON DATABASE {} TO {};
             GRANT SELECT ON public.address_lookup TO {};
-        """.format(db_ro_user, db_ro_password, db_ro_user, db_name, db_ro_user, db_ro_user)))
+        """.format(db_ro_user, db_ro_password, db_name, db_ro_user, db_ro_user)))
 
 
 # This will get called with the batch directory
@@ -158,7 +158,7 @@ def create_lookup_view_and_indexes(db_schema_name):
     print("Creating lookup_view {}".format(db_schema_name))
     lookup_view_sql = read_db_lookup_view_and_indexes_sql(db_schema_name)
 
-    epoch_schema_con = async_epoch_schema_connection(db_schema_name)
+    epoch_schema_con = epoch_schema_connection(db_schema_name)
 
     try:
         with epoch_schema_con.cursor() as cur:
@@ -314,11 +314,11 @@ def initial_connection_connection():
 def create_connection(options):
     con_params = db_con_params(options)
     return psycopg2.connect(
-        host=con_params['host'],
+        host='localhost', #con_params['host'],
         port=con_params['port'],
         database=con_params['database'],
         user=con_params['user'],
-        password=con_params['password'],
+        password='pa55w0rd123', #con_params['password'],
         sslmode=con_params['sslmode'],
         sslrootcert=con_params['sslrootcert'],
         options=con_params['options'],
@@ -330,7 +330,7 @@ def db_con_params(options):
     db_host = getSecret('address_lookup_rds_host', context=credstash_context)
     db_name = getSecret('address_lookup_rds_database', context=credstash_context)
     db_user = getSecret('address_lookup_rds_ingest_user', context=credstash_context)
-    token = client.generate_db_auth_token(DBHostname=db_host, Port=5432, DBUsername=db_user, Region='eu-west-2')
+    token = client.generate_db_auth_token(DBHostname='localhost', Port=5432, DBUsername=db_user, Region='eu-west-2')
 
     return {
         "host"    : db_host,
@@ -399,4 +399,4 @@ def insert_data_into_table(db_cur, table, file):
 if __name__ == "__main__":
     # process_handler(None, None)
     # create_lookup_view_and_indexes_handler("ab79_20201120_161341", None)
-    print(create_schema('79'))
+    print(create_lookup_view_and_indexes('ab80_20201204_103452'))
