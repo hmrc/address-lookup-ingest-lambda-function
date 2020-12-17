@@ -70,13 +70,15 @@ def check_status_handler(db_schema_name, context):
 
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
-            cur.execute("""SELECT status FROM public.address_lookup_status WHERE schema_name = %s""",
+            cur.execute("""SELECT status, error_message FROM public.address_lookup_status WHERE 
+            schema_name = 
+            %s""",
                         (db_schema_name,))
-            status = cur.fetchone()[0]  # If not rows found then error will be raised
+            status, error_message = cur.fetchone()  # If not rows found then error will be raised
 
     epoch_schema_con.close()
 
-    return status
+    return {'status': status, 'errorMessage': error_message}
 
 
 def cleanup_handler(epoch, context):
@@ -155,13 +157,20 @@ def ingest_files(db_schema_name, batch_dir):
 
 def create_lookup_view_and_indexes(db_schema_name):
     print("Creating lookup_view {}".format(db_schema_name))
-    lookup_view_sql = read_db_lookup_view_and_indexes_sql(db_schema_name)
+    lookup_view_sp_sql = read_db_lookup_view_and_indexes_sql(db_schema_name)
 
-    epoch_schema_con = async_epoch_schema_connection(db_schema_name)
-
-    try:
+    with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
-            cur.execute(lookup_view_sql)
+            cur.execute(lookup_view_sp_sql)
+
+    epoch_schema_con_async = async_epoch_schema_connection(db_schema_name)
+    try:
+        with epoch_schema_con_async.cursor() as cur:
+            sql_to_execute = """BEGIN TRANSACTION;
+            CALL create_address_lookup_view('{}');
+            COMMIT;"""
+
+            cur.execute(sql_to_execute.format(db_schema_name))
     except Exception, e:
         print('There was a warning.  This is the info we have about it: %s' % e)
 
@@ -242,7 +251,7 @@ def create_schema_objects(db_schema_name, schema_sql):
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
-            cur.execute("INSERT INTO public.address_lookup_status VALUES(%s, 'schema_created', now());""",
+            cur.execute("INSERT INTO public.address_lookup_status(schema_name, status, timestamp) VALUES(%s, 'schema_created', now());""",
                         (db_schema_name,))
 
     epoch_schema_con.close()
