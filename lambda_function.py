@@ -221,13 +221,16 @@ def is_new_schema_within_change_tolerance(latest_schema_name):
         with default_con.cursor() as cur:
             print("Checking new schema...")
             previous_schema = get_schema_to_compare(cur)
-            sql_to_execute = """SELECT COUNT(*) FROM {}.abp_street_descriptor"""
-            previous_count = cur.execute(sql.SQL(sql_to_execute.format(previous_schema)))[0]
-            latest_count = cur.execute(sql.SQL(sql_to_execute.format(latest_schema_name)))[0]
+            sql_to_execute = "SELECT COUNT(*) FROM {}.abp_street_descriptor"
+
+            cur.execute(sql.SQL(sql_to_execute.format(previous_schema)))
+            previous_count = cur.fetchone()
+            cur.execute(sql.SQL(sql_to_execute.format(latest_schema_name)))
+            latest_count = cur.fetchone()
     default_con.close()
 
-    percentage_change = ((latest_count - previous_count) / previous_count) * 100.0
-    return percentage_change < 0.3 and percentage_change > 0
+    percentage_change = ((latest_count[0] - previous_count[0]) / previous_count[0]) * 100.0
+    return 0.3 > percentage_change > 0
 
 
 def cleanup_old_epoch_directories(latest_epoch):
@@ -454,4 +457,4 @@ def insert_data_into_table(db_cur, table, file):
 if __name__ == "__main__":
     # process_handler(None, None)
     # create_lookup_view_and_indexes_handler("ab79_20201120_161341", None)
-    print(create_lookup_view_and_indexes('ab80_20201204_103452'))
+    print(is_new_schema_within_change_tolerance('ab81_20201220_003422'))
