@@ -81,13 +81,28 @@ def check_status_handler(db_schema_name, context):
     return {'status': status, 'errorMessage': error_message}
 
 
-def cleanup_handler(epoch, context):
-    """
-    Handler for cleaning up the filesystem
-    :param epoch:
-    """
-    cleanup_old_epoch_directories(epoch)
-    cleanup_processed_csvs(epoch)
+def finalise_handler(epoch_data, context):
+    epoch = epoch_data['epoch']
+    schema_name = epoch_data['schemaName']
+
+    schema_ok = is_new_schema_within_change_tolerance(schema_name)
+    if schema_ok:
+        switch_address_lookup_view_to_new(schema_name)
+        cleanup_old_epoch_directories(epoch)
+        # cleanup_processed_csvs(epoch)
+
+    return schema_ok
+
+
+def switch_address_lookup_view_to_new(schema_name):
+    with epoch_schema_connection(schema_name) as epoch_schema_con:
+        with epoch_schema_con.cursor() as cur:
+            cur.execute("""
+                CREATE OR REPLACE VIEW public.address_lookup AS SELECT * FROM address_lookup;
+    
+                GRANT SELECT ON public.address_lookup TO addresslookupreader;
+                """)
+    epoch_schema_con.close()
 
 
 def dbuser_init(db_cur):
@@ -136,6 +151,7 @@ def create_schema(epoch):
     print("Using schema name {}".format(db_schema_name))
 
     ensure_status_table()
+    drop_old_schemas()
     init_schema(db_schema_name)
     schema_sql = read_db_schema_sql(db_schema_name)
     create_schema_objects(db_schema_name, schema_sql)
@@ -182,17 +198,36 @@ def ensure_status_table():
             lookup_view_sql = open('create_status_table.sql', 'r').read()
             cur.execute(lookup_view_sql)
 
+    default_con.close()
+
+
+def drop_old_schemas():
+    with default_connection() as default_con:
+        with default_con.cursor() as cur:
+            print("Dropping old schemas...")
             def drop_schema(schema_to_drop):
                 print("Dropping old schema {}".format(schema_to_drop))
                 sql_to_execute = """DROP SCHEMA IF EXISTS {} CASCADE; 
                     DELETE FROM public.address_lookup_status WHERE schema_name = '{}';"""
                 cur.execute(sql.SQL(sql_to_execute.format(schema_to_drop, schema_to_drop)))
 
-            schemas_to_drop = get_schemas_to_drop(cur)
-            map(drop_schema, schemas_to_drop)
+            map(drop_schema, get_schemas_to_drop(cur))
 
     default_con.close()
-    return schemas_to_drop
+
+
+def is_new_schema_within_change_tolerance(latest_schema_name):
+    with default_connection() as default_con:
+        with default_con.cursor() as cur:
+            print("Checking new schema...")
+            previous_schema = get_schema_to_compare(cur)
+            sql_to_execute = """SELECT COUNT(*) FROM {}.abp_street_descriptor"""
+            previous_count = cur.execute(sql.SQL(sql_to_execute.format(previous_schema)))[0]
+            latest_count = cur.execute(sql.SQL(sql_to_execute.format(latest_schema_name)))[0]
+    default_con.close()
+
+    percentage_change = ((latest_count - previous_count) / previous_count) * 100.0
+    return percentage_change < 0.3 and percentage_change > 0
 
 
 def cleanup_old_epoch_directories(latest_epoch):
@@ -235,6 +270,20 @@ def get_schemas_to_drop(db_cur):
 
     schemas_to_drop = db_cur.fetchall()
     return map(lambda st: st[0], schemas_to_drop)
+
+
+# noinspection SqlResolve
+def get_schema_to_compare(db_cur):
+    db_cur.execute(
+        """    SELECT schema_name
+               FROM public.address_lookup_status
+               WHERE status = 'completed'
+               ORDER BY timestamp DESC
+               LIMIT 1
+           """)
+
+    schema = db_cur.fetchone()
+    return schema[0]
 
 
 def init_schema(db_schema_name):

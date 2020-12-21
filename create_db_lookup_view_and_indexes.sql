@@ -100,12 +100,6 @@ BEGIN
         timestamp = now()
     WHERE schema_name = the_schema_name;
 
-    CREATE OR REPLACE VIEW public.address_lookup
-    AS
-    SELECT * FROM address_lookup;
-
-    GRANT SELECT ON public.address_lookup TO addresslookupreader;
-
     UPDATE public.address_lookup_status
     SET status    = 'public_view_created',
         timestamp = now()
