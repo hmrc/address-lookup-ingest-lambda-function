@@ -85,7 +85,10 @@ def finalise_handler(epoch_data, context):
     epoch = epoch_data['epoch']
     schema_name = epoch_data['schemaName']
 
+    print('Finalising epoch:{} and schema_name:{}'.format(epoch, schema_name))
+
     schema_ok = is_new_schema_within_change_tolerance(schema_name)
+    print('Returning schema_ok:{}'.format(schema_ok))
     if schema_ok:
         switch_address_lookup_view_to_new(schema_name)
         cleanup_old_epoch_directories(epoch)
@@ -219,8 +222,12 @@ def drop_old_schemas():
 def is_new_schema_within_change_tolerance(latest_schema_name):
     with default_connection() as default_con:
         with default_con.cursor() as cur:
-            print("Checking new schema...")
-            previous_schema = get_schema_to_compare(cur)
+            previous_schema = get_schema_to_compare(cur, latest_schema_name)
+            if previous_schema is None:
+                print('No previous schema found - first run?')
+                return True
+
+            print("Checking new schema {} against {}...".format(latest_schema_name, previous_schema))
             sql_to_execute = "SELECT COUNT(*) FROM {}.abp_street_descriptor"
 
             cur.execute(sql.SQL(sql_to_execute.format(previous_schema)))
@@ -230,7 +237,7 @@ def is_new_schema_within_change_tolerance(latest_schema_name):
     default_con.close()
 
     percentage_change = ((latest_count[0] - previous_count[0]) / previous_count[0]) * 100.0
-    return 0.3 > percentage_change > 0
+    return 0.3 >= percentage_change >= 0
 
 
 def cleanup_old_epoch_directories(latest_epoch):
@@ -276,14 +283,15 @@ def get_schemas_to_drop(db_cur):
 
 
 # noinspection SqlResolve
-def get_schema_to_compare(db_cur):
+def get_schema_to_compare(db_cur, latest_schema_name):
     db_cur.execute(
         """    SELECT schema_name
                FROM public.address_lookup_status
                WHERE status = 'completed'
+               AND schema_name <> '{}'
                ORDER BY timestamp DESC
                LIMIT 1
-           """)
+           """.format(latest_schema_name))
 
     schema = db_cur.fetchone()
     return schema[0]
