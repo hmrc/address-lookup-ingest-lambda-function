@@ -8,10 +8,7 @@ pipeline {
     stage('Build artefact') {
       steps {
         ansiColor('xterm') {
-        	sh("""
-               docker build --no-cache --tag=address-lookup-ingest-lambda-builder-image .
-               docker run --rm -t -v \$(pwd):/work --name=build-address-lookup-ingest-lambda address-lookup-ingest-lambda-builder-image
-               """)
+        	sh('make build')
         }
       }
     }
@@ -23,11 +20,6 @@ pipeline {
 //           make push-s3 S3_BUCKET=txm-lambda-functions-staging
 //           make push-s3 S3_BUCKET=txm-lambda-functions-production
            """)
-      }
-    }
-    stage ('Run cip-attval-terraform job') {
-      steps {
-        build job: 'cip-attval-terraform/terraform-environments'
       }
     }
   }
