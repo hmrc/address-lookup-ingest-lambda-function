@@ -92,7 +92,7 @@ BEGIN
     WHERE schema_name = the_schema_name;
 
     CREATE INDEX address_lookup_outcode_idx
-        ON address_lookup (substring(postcode, 0, position(postcode, ' '::text)));
+        ON address_lookup ("substring"(postcode, 0, "position"(postcode, ' '::text)));
 
     UPDATE public.address_lookup_status
     SET status    = 'outcodecode_index_created',
