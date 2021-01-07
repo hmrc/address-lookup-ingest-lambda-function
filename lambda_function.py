@@ -101,9 +101,11 @@ def show_status_handler():
   with default_connection() as con:
     with con.cursor() as cur:
       cur.execute("""SELECT * FROM public.address_lookup_status""")
-      print(cur.fetchall())
+      results = cur.fetchall()
+      print(results)
 
   con.close()
+  return results
 
 
 def switch_address_lookup_view_to_new(schema_name):
