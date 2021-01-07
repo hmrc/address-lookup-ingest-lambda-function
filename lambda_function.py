@@ -97,6 +97,15 @@ def finalise_handler(epoch_data, context):
     return schema_ok
 
 
+def show_status_handler():
+  with default_connection() as con:
+    with con.cursor() as cur:
+      cur.execute("""SELECT * FROM public.address_lookup_status""")
+      print(cur.fetchall())
+
+  con.close()
+
+
 def switch_address_lookup_view_to_new(schema_name):
     with epoch_schema_connection(schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
