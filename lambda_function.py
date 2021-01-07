@@ -100,7 +100,7 @@ def finalise_handler(epoch_data, context):
 def show_status_handler(input, context):
   with default_connection() as con:
     with con.cursor() as cur:
-      cur.execute("""SELECT * FROM public.address_lookup_status""")
+      cur.execute("""SELECT schema_name, status, to_char(timestamp, 'DD Mon YYYY HH:MI:SSPM') as timestamp, error_message FROM public.address_lookup_status""")
       results = cur.fetchall()
       print(results)
 
