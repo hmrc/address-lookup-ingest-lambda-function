@@ -5,4 +5,4 @@ CREATE TABLE IF NOT EXISTS public.address_lookup_status (
 );
 
 ALTER TABLE public.address_lookup_status
-ADD COLUMN error_message VARCHAR NULL;
+ADD COLUMN IF NOT EXISTS error_message VARCHAR NULL;
