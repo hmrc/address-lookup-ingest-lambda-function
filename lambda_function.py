@@ -97,7 +97,7 @@ def finalise_handler(epoch_data, context):
     return schema_ok
 
 
-def show_status_handler():
+def show_status_handler(input, context):
   with default_connection() as con:
     with con.cursor() as cur:
       cur.execute("""SELECT * FROM public.address_lookup_status""")
