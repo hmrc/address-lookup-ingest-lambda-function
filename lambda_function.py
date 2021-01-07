@@ -197,7 +197,7 @@ def create_lookup_view_and_indexes(db_schema_name):
 def ensure_status_table():
     with default_connection() as default_con:
         with default_con.cursor() as cur:
-            print("Creating status table if it does not exist...")
+            print("Creating status table (if it does not exist) or altering if it exists...")
             lookup_view_sql = open('create_status_table.sql', 'r').read()
             cur.execute(lookup_view_sql)
 
