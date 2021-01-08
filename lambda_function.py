@@ -111,11 +111,13 @@ def show_status_handler(input, context):
 def switch_address_lookup_view_to_new(schema_name):
     with epoch_schema_connection(schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
-            cur.execute("""
+            cur.execute(sql.SQL("""
                 CREATE OR REPLACE VIEW public.address_lookup AS SELECT * FROM address_lookup;
     
                 GRANT SELECT ON public.address_lookup TO addresslookupreader;
-                """)
+                
+                UPDATE public.address_lookup_status SET status = 'finalised' WHERE schema_name = '{}';
+                """.format(schema_name,)))
     epoch_schema_con.close()
 
 
@@ -222,7 +224,7 @@ def drop_old_schemas():
             def drop_schema(schema_to_drop):
                 print("Dropping old schema {}".format(schema_to_drop))
                 sql_to_execute = """DROP SCHEMA IF EXISTS {} CASCADE; 
-                    DELETE FROM public.address_lookup_status WHERE schema_name = '{}';"""
+                    UPDATE public.address_lookup_status SET status = 'dropped' WHERE schema_name = '{}';"""
                 cur.execute(sql.SQL(sql_to_execute.format(schema_to_drop, schema_to_drop)))
 
             map(drop_schema, get_schemas_to_drop(cur))
@@ -280,14 +282,15 @@ def cleanup_processed_csvs(epoch):
 def get_schemas_to_drop(db_cur):
     db_cur.execute(
         """SELECT schema_name
-           FROM public.address_lookup_status
-           WHERE schema_name NOT IN (
+            FROM public.address_lookup_status
+            WHERE schema_name NOT IN (
                SELECT schema_name
                FROM public.address_lookup_status
-               WHERE status = 'completed'
+               WHERE status = 'finalised'
                ORDER BY timestamp DESC
                LIMIT 1
-           );""")
+            )
+            AND EXISTS (SELECT 'a' FROM public.address_lookup_status WHERE status = 'finalised');""")
 
     schemas_to_drop = db_cur.fetchall()
     return map(lambda st: st[0], schemas_to_drop)
@@ -298,14 +301,17 @@ def get_schema_to_compare(db_cur, latest_schema_name):
     db_cur.execute(
         """    SELECT schema_name
                FROM public.address_lookup_status
-               WHERE status = 'completed'
+               WHERE status = 'finalised'
                AND schema_name <> '{}'
                ORDER BY timestamp DESC
                LIMIT 1
            """.format(latest_schema_name))
 
     schema = db_cur.fetchone()
-    return schema[0]
+    if schema is None:
+      return None
+    else:
+      return schema[0]
 
 
 def init_schema(db_schema_name):
