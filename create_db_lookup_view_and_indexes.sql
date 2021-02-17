@@ -68,7 +68,8 @@ BEGIN
     FROM abp_delivery_point d
              JOIN abp_blpu b ON b.uprn = d.uprn
              JOIN abp_lpi l ON l.uprn = b.uprn
-             JOIN abp_street_descriptor asd ON l.usrn = asd.usrn;
+             JOIN abp_street_descriptor asd ON l.usrn = asd.usrn and l.language = asd.language
+    WHERE    l.language = 'ENG';
 
     UPDATE public.address_lookup_status
     SET status    = 'view_created',
