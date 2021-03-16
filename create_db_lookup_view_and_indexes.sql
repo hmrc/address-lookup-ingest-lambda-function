@@ -67,7 +67,7 @@ BEGIN
                    ' '::text))                                                                                 AS address_lookup_ft_col
     FROM abp_delivery_point d
              JOIN abp_blpu b ON b.uprn = d.uprn
-             JOIN abp_lpi l ON l.uprn = b.uprn
+             JOIN abp_lpi l ON l.uprn = b.uprn AND l.logical_status = 1
              JOIN abp_street_descriptor asd ON l.usrn = asd.usrn and l.language = asd.language
     WHERE    l.language = 'ENG';
 
