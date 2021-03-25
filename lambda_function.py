@@ -98,14 +98,15 @@ def finalise_handler(epoch_data, context):
 
 
 def show_status_handler(input, context):
-  with default_connection() as con:
-    with con.cursor() as cur:
-      cur.execute("""SELECT schema_name, status, to_char(timestamp, 'DD Mon YYYY HH:MI:SSPM') as timestamp, error_message FROM public.address_lookup_status""")
-      results = cur.fetchall()
-      print(results)
+    with default_connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """SELECT schema_name, status, to_char(timestamp, 'DD Mon YYYY HH:MI:SSPM') as timestamp, error_message FROM public.address_lookup_status""")
+            results = cur.fetchall()
+            print(results)
 
-  con.close()
-  return results
+    con.close()
+    return results
 
 
 def switch_address_lookup_view_to_new(schema_name):
@@ -117,7 +118,7 @@ def switch_address_lookup_view_to_new(schema_name):
                 GRANT SELECT ON public.address_lookup TO addresslookupreader;
                 
                 UPDATE public.address_lookup_status SET status = 'finalised' WHERE schema_name = '{}';
-                """.format(schema_name,)))
+                """.format(schema_name, )))
     epoch_schema_con.close()
 
 
@@ -221,6 +222,7 @@ def drop_old_schemas():
     with default_connection() as default_con:
         with default_con.cursor() as cur:
             print("Dropping old schemas...")
+
             def drop_schema(schema_to_drop):
                 print("Dropping old schema {}".format(schema_to_drop))
                 sql_to_execute = """DROP SCHEMA IF EXISTS {} CASCADE; 
@@ -309,9 +311,9 @@ def get_schema_to_compare(db_cur, latest_schema_name):
 
     schema = db_cur.fetchone()
     if schema is None:
-      return None
+        return None
     else:
-      return schema[0]
+        return schema[0]
 
 
 def init_schema(db_schema_name):
@@ -328,8 +330,9 @@ def create_schema_objects(db_schema_name, schema_sql):
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
-            cur.execute("INSERT INTO public.address_lookup_status(schema_name, status, timestamp) VALUES(%s, 'schema_created', now());""",
-                        (db_schema_name,))
+            cur.execute(
+                "INSERT INTO public.address_lookup_status(schema_name, status, timestamp) VALUES(%s, 'schema_created', now());""",
+                (db_schema_name,))
 
     epoch_schema_con.close()
 
@@ -371,10 +374,10 @@ def create_async_connection(options):
         database=con_params['database'],
         user=con_params['user'],
         password=con_params['password'],
-        async=1,
-        sslmode=con_params['sslmode'],
-        sslrootcert=con_params['sslrootcert'],
-        options=con_params['options'])
+    async=1,
+          sslmode = con_params['sslmode'],
+                    sslrootcert = con_params['sslrootcert'],
+                                  options = con_params['options'])
     wait(conn)
     return conn
 
@@ -418,14 +421,14 @@ def db_con_params(options):
     token = client.generate_db_auth_token(DBHostname=db_host, Port=5432, DBUsername=db_user, Region='eu-west-2')
 
     return {
-        "host"    : db_host,
-        "port"    : 5432,
+        "host": db_host,
+        "port": 5432,
         "database": db_name,
-        "user"    : db_user,
+        "user": db_user,
         "password": token,
         "sslmode": "prefer",
         "sslrootcert": "rds-combined-ca-bundle.pem",
-        "options" : options
+        "options": options
     }
 
 
