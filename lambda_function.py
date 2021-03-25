@@ -70,9 +70,7 @@ def check_status_handler(db_schema_name, context):
 
     with epoch_schema_connection(db_schema_name) as epoch_schema_con:
         with epoch_schema_con.cursor() as cur:
-            cur.execute("""SELECT status, error_message FROM public.address_lookup_status WHERE 
-            schema_name = 
-            %s""",
+            cur.execute("""SELECT status, error_message FROM public.address_lookup_status WHERE schema_name = %s""",
                         (db_schema_name,))
             status, error_message = cur.fetchone()  # If not rows found then error will be raised
 
@@ -101,7 +99,12 @@ def show_status_handler(input, context):
     with default_connection() as con:
         with con.cursor() as cur:
             cur.execute(
-                """SELECT schema_name, status, to_char(timestamp, 'DD Mon YYYY HH:MI:SSPM') as timestamp, error_message FROM public.address_lookup_status""")
+                """SELECT schema_name, 
+                          status, 
+                          to_char(timestamp, 'DD Mon YYYY HH:MI:SSPM') as timestamp, 
+                          error_message 
+                    FROM public.address_lookup_status """
+            )
             results = cur.fetchall()
             print(results)
 
@@ -114,9 +117,7 @@ def switch_address_lookup_view_to_new(schema_name):
         with epoch_schema_con.cursor() as cur:
             cur.execute(sql.SQL("""
                 CREATE OR REPLACE VIEW public.address_lookup AS SELECT * FROM address_lookup;
-    
                 GRANT SELECT ON public.address_lookup TO addresslookupreader;
-                
                 UPDATE public.address_lookup_status SET status = 'finalised' WHERE schema_name = '{}';
                 """.format(schema_name, )))
     epoch_schema_con.close()
@@ -225,7 +226,8 @@ def drop_old_schemas():
 
             def drop_schema(schema_to_drop):
                 print("Dropping old schema {}".format(schema_to_drop))
-                sql_to_execute = """DROP SCHEMA IF EXISTS {} CASCADE; 
+                sql_to_execute = """
+                    DROP SCHEMA IF EXISTS {} CASCADE; 
                     UPDATE public.address_lookup_status SET status = 'dropped' WHERE schema_name = '{}';"""
                 cur.execute(sql.SQL(sql_to_execute.format(schema_to_drop, schema_to_drop)))
 
@@ -292,7 +294,8 @@ def get_schemas_to_drop(db_cur):
                ORDER BY timestamp DESC
                LIMIT 1
             )
-            AND EXISTS (SELECT 'a' FROM public.address_lookup_status WHERE status = 'finalised');""")
+            AND EXISTS (SELECT 'a' FROM public.address_lookup_status WHERE status = 'finalised');"""
+    )
 
     schemas_to_drop = db_cur.fetchall()
     return map(lambda st: st[0], schemas_to_drop)
@@ -307,7 +310,8 @@ def get_schema_to_compare(db_cur, latest_schema_name):
                AND schema_name <> '{}'
                ORDER BY timestamp DESC
                LIMIT 1
-           """.format(latest_schema_name))
+           """.format(latest_schema_name)
+    )
 
     schema = db_cur.fetchone()
     if schema is None:
@@ -331,7 +335,7 @@ def create_schema_objects(db_schema_name, schema_sql):
         with epoch_schema_con.cursor() as cur:
             create_db_schema_objects(epoch_schema_con, cur, schema_sql)
             cur.execute(
-                "INSERT INTO public.address_lookup_status(schema_name, status, timestamp) VALUES(%s, 'schema_created', now());""",
+                """INSERT INTO public.address_lookup_status(schema_name, status, timestamp) VALUES(%s, 'schema_created', now());""",
                 (db_schema_name,))
 
     epoch_schema_con.close()
@@ -374,10 +378,11 @@ def create_async_connection(options):
         database=con_params['database'],
         user=con_params['user'],
         password=con_params['password'],
-    async=1,
-          sslmode = con_params['sslmode'],
-                    sslrootcert = con_params['sslrootcert'],
-                                  options = con_params['options'])
+        async=1,
+        sslmode=con_params['sslmode'],
+        sslrootcert=con_params['sslrootcert'],
+        options=con_params['options']
+    )
     wait(conn)
     return conn
 
