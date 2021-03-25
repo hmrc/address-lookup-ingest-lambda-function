@@ -1,5 +1,5 @@
 FROM ubuntu:20.10
-RUN apt update && apt upgrade --yes
+RUN apt update
 RUN apt install software-properties-common --yes
 RUN apt update && apt upgrade --yes
 RUN add-apt-repository universe
@@ -11,5 +11,4 @@ RUN apt install build-essential --yes
 RUN pip2 install virtualenvwrapper
 VOLUME /work
 WORKDIR /work
-ENTRYPOINT ["/bin/bash"]
 ENTRYPOINT ["/bin/bash", "do-make-build-in-docker.sh"]
