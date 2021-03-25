@@ -8,7 +8,10 @@ pipeline {
     stage('Build artefact') {
       steps {
         ansiColor('xterm') {
-        	sh('make build')
+        	sh("""
+               docker build --no-cache --tag=address-lookup-ingest-lambda-builder-image .
+               docker run -t -v \$(pwd):/work --name  address-lookup-ingest-lambda-builder address-lookup-ingest-lambda-builder-image
+               """)
         }
       }
     }
@@ -23,7 +26,9 @@ pipeline {
       }
     }
     stage ('Run cip-attval-terraform job') {
-      build job: 'cip-attval-terraform/terraform-environments'
+      steps {
+        build job: 'cip-attval-terraform/terraform-environments'
+      }
     }
   }
 }
