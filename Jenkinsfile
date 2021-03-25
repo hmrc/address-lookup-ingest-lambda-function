@@ -10,7 +10,7 @@ pipeline {
         ansiColor('xterm') {
         	sh("""
                docker build --no-cache --tag=address-lookup-ingest-lambda-builder-image .
-               docker run -t -v \$(pwd):/work --name=address-lookup-ingest-lambda-builder address-lookup-ingest-lambda-builder-image
+               docker run -rm -t -v \$(pwd):/work --name=build-address-lookup-ingest-lambda address-lookup-ingest-lambda-builder-image
                """)
         }
       }
