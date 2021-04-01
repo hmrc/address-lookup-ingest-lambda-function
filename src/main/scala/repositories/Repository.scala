@@ -20,17 +20,20 @@ import cats.effect.{ContextShift, IO}
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.rds.auth.{GetIamAuthTokenRequest, RdsIamAuthTokenGenerator}
 import com.jessecoyle.JCredStash
-import doobie.{Fragment, Transactor}
+import doobie._
 import doobie.implicits._
+import doobie.postgres._
+import doobie.postgres.implicits._
 
-import java.text.SimpleDateFormat
+import java.io.File
+import java.nio.file.{Files, StandardOpenOption}
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 trait Repository {}
 
@@ -147,8 +150,9 @@ class AdminRepository(transactor: Transactor[IO]) {
 }
 
 class IngestRepository(transactor: Transactor[IO]) {
-
   import Repository._
+
+  val rootDir = "/mnt/efs/"
 
   def runAsyncTest() = {
     println(s"runAsyncTest(): BEGIN")
@@ -165,6 +169,29 @@ class IngestRepository(transactor: Transactor[IO]) {
       }
     Thread.sleep(1000)
     println(s"runAsyncTest(): END")
+  }
+
+  // Does this belong here???
+  val recordToFileNames = Map(
+    "abp_blpu" -> "ID21_BLPU_Records.csv",
+    "abp_delivery_point" -> "ID28_DPA_Records.csv",
+    "abp_lpi" -> "ID24_LPI_Records.csv",
+    "abp_crossref" -> "ID23_XREF_Records.csv",
+    "abp_classification" -> "ID32_Class_Records.csv",
+    "abp_street" -> "ID11_Street_Records.csv",
+    "abp_street_descriptor" -> "ID15_StreetDesc_Records.csv",
+    "abp_organisation" -> "ID31_Org_Records.csv",
+    "abp_successor" -> "ID30_Successor_Records.csv"
+  )
+  def ingestFiles(schemaName: String, processDir: String) =
+    Future.sequence(recordToFileNames.map{case (t, f) => ingestFile(s"$schemaName.$t",s"$processDir/$f")})
+      .map(_.toList.size)
+
+  def ingestFile(table: String, filePath: String) = {
+    // Should this be here???
+    val in = Files.newInputStream(new File(filePath).toPath, StandardOpenOption.READ)
+    PHC.pgGetCopyAPI(PFCM.copyIn(s"""COPY $table FROM STDIN WITH (FORMAT CSV, HEADER, DELIMITER ',')""", in))
+      .transact(transactor).unsafeToFuture()
   }
 
   def createLookupView(schemaName: String) = {
