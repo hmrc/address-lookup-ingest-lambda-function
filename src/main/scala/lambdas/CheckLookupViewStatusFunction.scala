@@ -17,3 +17,7 @@ class CheckLookupViewStatusFunction extends RequestHandler[jMap[String, String],
     repository.initialiseUsers()
   }
 }
+
+object CheckLookupViewStatusFunction extends App {
+  new CheckLookupViewStatusFunction().handleRequest(null, null)
+}

@@ -47,8 +47,8 @@ class AdminRepository(transactor: Transactor[IO]) {
     _ <- ensureStatusTableExists()
     schemasToDrop <- getSchemasToDrop()
     _ <- dropSchemas(schemasToDrop)
-    _ <- createSchema(epoch)
-  } yield ()
+    schemaName <- createSchema(epoch)
+  } yield schemaName
 
   private def ensureStatusTableExists() = {
     sql"""CREATE TABLE IF NOT EXISTS public.address_lookup_status (
@@ -98,6 +98,7 @@ class AdminRepository(transactor: Transactor[IO]) {
       .run
       .transact(transactor)
       .unsafeToFuture()
+      .map(_ => schemaName)
   }
 
   private def initialiseIngestUser() = {

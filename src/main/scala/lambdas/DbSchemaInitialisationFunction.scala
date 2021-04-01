@@ -19,5 +19,5 @@ class DbSchemaInitialisationFunction extends RequestHandler[String, Unit] {
 }
 
 object DbSchemaInitialisationFunction extends App {
-  new DbSchemaInitialisationFunction().handleRequest("21", null)
+  new DbSchemaInitialisationFunction().handleRequest(args(0), null)
 }
