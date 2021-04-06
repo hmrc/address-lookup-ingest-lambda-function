@@ -41,19 +41,21 @@ class AdminRepository(transactor: Transactor[IO]) {
 
   import Repository._
 
-  def initialiseUsers() = for {
+  def initialiseUsers(): Future[Unit] = for {
     _ <- initialiseIngestUser()
     _ <- initialiseReaderUser()
   } yield ()
 
-  def initialiseSchema(epoch: String) = for {
-    _ <- ensureStatusTableExists()
+  def initialiseSchema(epoch: String): Future[String] = for {
+    _             <- ensureStatusTableExists()
     schemasToDrop <- getSchemasToDrop()
-    _ <- dropSchemas(schemasToDrop)
-    schemaName <- createSchema(epoch)
+    _             <- dropSchemas(schemasToDrop)
+    schemaName    <- createSchema(epoch)
+    _             <- createTables(schemaName)
   } yield schemaName
 
   private def ensureStatusTableExists() = {
+    println(s"ensureStatusTableExists")
     sql"""CREATE TABLE IF NOT EXISTS public.address_lookup_status (
          |    schema_name VARCHAR(64) NOT NULL PRIMARY KEY,
          |    status      VARCHAR(32) NOT NULL,
@@ -65,6 +67,7 @@ class AdminRepository(transactor: Transactor[IO]) {
   }
 
   private def getSchemasToDrop() = {
+    println(s"getSchemasToDrop")
     sql"""SELECT schema_name
          |FROM public.address_lookup_status
          |WHERE schema_name NOT IN (
@@ -102,6 +105,11 @@ class AdminRepository(transactor: Transactor[IO]) {
       .transact(transactor)
       .unsafeToFuture()
       .map(_ => schemaName)
+  }
+
+  private def createTables(schemaName: String): Future[Int] = {
+    val createSchemaSql = Source.fromResource("create_db_schema.sql").mkString.replaceAll("__schema__", schemaName)
+    Fragment.const(createSchemaSql).update.run.transact(transactor).unsafeToFuture()
   }
 
   private def initialiseIngestUser() = {
@@ -294,6 +302,20 @@ object Repository {
 
   private lazy val adminTransactor: Transactor[IO] = adminXa()
   private lazy val ingestorTransactor: Transactor[IO] = ingestorXa()
+
+  lazy val testH2Transactor: Transactor[IO] = h2Xa()
+
+  private def h2Xa(): Transactor[IO] = {
+    implicit val cs: ContextShift[IO] =
+      IO.contextShift(implicitly[ExecutionContext])
+
+    Transactor.fromDriverManager[IO](
+      "org.h2.Driver",
+      s"jdbc:h2:mem:;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;",
+      "",
+      ""
+    )
+  }
 
   private def adminXa(): Transactor[IO] = {
     implicit val cs: ContextShift[IO] =

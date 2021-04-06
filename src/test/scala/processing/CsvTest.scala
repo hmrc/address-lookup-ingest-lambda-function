@@ -17,18 +17,18 @@ class CsvTest extends AnyWordSpec with Matchers {
         val csv = new Csv(rootPath.toString)
         csv.process()
 
-        countLinesInFile("ID10_Header_Records.csv") shouldBe 1
-        countLinesInFile("ID11_Street_Records.csv") shouldBe 46694
-        countLinesInFile("ID15_StreetDesc_Records.csv") shouldBe 46770
+        countLinesInFile("ID10_Header_Records.csv") shouldBe 2
+        countLinesInFile("ID11_Street_Records.csv") shouldBe 46788
+        countLinesInFile("ID15_StreetDesc_Records.csv") shouldBe 46788
         countLinesInFile("ID21_BLPU_Records.csv") shouldBe 1
         countLinesInFile("ID23_XREF_Records.csv") shouldBe 1
         countLinesInFile("ID24_LPI_Records.csv") shouldBe 1
         countLinesInFile("ID28_DPA_Records.csv") shouldBe 1
-        countLinesInFile("ID29_Metadata_Records.csv") shouldBe 1
+        countLinesInFile("ID29_Metadata_Records.csv") shouldBe 2
         countLinesInFile("ID30_Successor_Records.csv") shouldBe 1
         countLinesInFile("ID31_Org_Records.csv") shouldBe 1
         countLinesInFile("ID32_Class_Records.csv") shouldBe 1
-        countLinesInFile("ID99_Trailer_Records.csv") shouldBe 1
+        countLinesInFile("ID99_Trailer_Records.csv") shouldBe 2
       }
     }
   }

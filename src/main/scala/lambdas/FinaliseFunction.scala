@@ -1,7 +1,7 @@
 package lambdas
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
-import repositories.Repository
+import repositories.{IngestRepository, Repository}
 
 import java.util.{Map => jMap}
 import scala.concurrent.duration.DurationInt
@@ -14,11 +14,10 @@ class FinaliseFunction extends RequestHandler[jMap[String, String], Boolean] {
 
     println(s"Finalising epoch: $epoch schema_name: $schemaName")
 
-    Await.result(finaliseSchema(epoch, schemaName), 5.seconds)
+    Await.result(finaliseSchema(Repository.forIngest(), epoch, schemaName), 5.seconds)
   }
 
-  private def finaliseSchema(epoch: String, schemaName: String): Future[Boolean] = {
-    val repository = Repository.forIngest()
+  private def finaliseSchema(repository: IngestRepository, epoch: String, schemaName: String): Future[Boolean] = {
     repository.finaliseSchema(epoch, schemaName)
   }
 }

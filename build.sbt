@@ -18,7 +18,8 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-core" % doobieVersion,
   "org.tpolecat" %% "doobie-hikari" % doobieVersion,
   "org.tpolecat" %% "doobie-postgres" % doobieVersion,
-  "org.scalatest" %% "scalatest" % "3.2.2" % Test
+  "org.scalatest" %% "scalatest" % "3.2.2" % Test,
+  "com.h2database" % "h2" % "1.4.200" % "test, it"
 )
 
 def assemblyName = s"${ThisBuild / name}_${ThisBuild / scalaVersion}-${ThisBuild / version}.jar"

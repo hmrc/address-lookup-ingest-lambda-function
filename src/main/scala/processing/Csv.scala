@@ -1,14 +1,7 @@
 package processing
 
-import java.io.{
-  BufferedReader,
-  File,
-  FileInputStream,
-  FileOutputStream,
-  FileReader,
-  PrintWriter
-}
-import java.nio.file.Paths
+import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileReader, PrintWriter}
+import java.nio.file.{Files, Paths}
 import java.util.zip.ZipInputStream
 
 class Csv(private val root: String) {
@@ -32,6 +25,8 @@ class Csv(private val root: String) {
       .filter(_.getName.endsWith(".zip"))
       .flatMap(unpackZipFile)
       .foreach(f => processFile(typeToWriterMap)(f))
+
+    typeToWriterMap.foreach{case (_, out) => out.flush; out.close}
   }
 
   private def createWriterAndAddHeader(name: String, headers: Seq[String]) = {
