@@ -1,7 +1,7 @@
 package lambdas
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
-import repositories.Repository
+import repositories.{IngestRepository, Repository}
 
 import java.util.{Map => jMap}
 import scala.concurrent.Await
@@ -12,11 +12,10 @@ class AddressIngestFunction extends RequestHandler[jMap[String, String], Unit] {
   override def handleRequest(batch_info: jMap[String, String], context: Context /*Not used*/): Unit = {
     val batchDir = batch_info.get("batchDir")
     val dbSchemaName = batch_info.get("schemaName")
-    Await.result(ingestFiles(dbSchemaName, batchDir), 15.minutes)
+    Await.result(ingestFiles(Repository.forIngest(), dbSchemaName, batchDir), 15.minutes)
   }
 
-  private def ingestFiles(schemaName: String, processDir: String) = {
-    val repository = Repository.forIngest()
+  private[lambdas] def ingestFiles(repository: IngestRepository, schemaName: String, processDir: String) = {
     repository.ingestFiles(schemaName, processDir)
     //    repository.ingestFile("public.testing", "<root_dir>/testing_copyin.csv")
   }

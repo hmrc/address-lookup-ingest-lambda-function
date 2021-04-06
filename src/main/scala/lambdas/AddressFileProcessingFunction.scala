@@ -11,7 +11,7 @@ class AddressFileProcessingFunction extends RequestHandler[jMap[String, String],
     processFiles(batchDir)
   }
 
-  private def processFiles(processDir: String): Unit = {
+  private[lambdas] def processFiles(processDir: String): Unit = {
     new Csv(processDir).process()
   }
 }

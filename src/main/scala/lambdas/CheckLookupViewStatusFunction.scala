@@ -1,7 +1,7 @@
 package lambdas
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
-import repositories.Repository
+import repositories.{IngestRepository, Repository}
 
 import java.util.{Map => jMap}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,11 +11,10 @@ import scala.collection.JavaConverters._
 
 class CheckLookupViewStatusFunction extends RequestHandler[String, jMap[String, String]] {
   override def handleRequest(schemaName: String, contextNotUsed: Context): jMap[String, String] = {
-    Await.result(checkLookupViewStatus(schemaName), 5.seconds).asJava
+    Await.result(checkLookupViewStatus(Repository.forIngest(), schemaName), 5.seconds).asJava
   }
 
-  private def checkLookupViewStatus(schemaName: String): Future[Map[String, String]] = {
-    val repository = Repository.forIngest()
+  private def checkLookupViewStatus(repository: IngestRepository, schemaName: String): Future[Map[String, String]] = {
     repository.checkLookupViewStatus(schemaName)
       .map{case (status, errorMessage) => Map("status" -> status, "errorMessage" -> errorMessage)}
   }

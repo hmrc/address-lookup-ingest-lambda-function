@@ -41,16 +41,17 @@ class AdminRepository(transactor: Transactor[IO]) {
 
   import Repository._
 
-  def initialiseUsers() = for {
+  def initialiseUsers(): Future[Unit] = for {
     _ <- initialiseIngestUser()
     _ <- initialiseReaderUser()
   } yield ()
 
-  def initialiseSchema(epoch: String) = for {
-    _ <- ensureStatusTableExists()
+  def initialiseSchema(epoch: String): Future[String] = for {
+    _             <- ensureStatusTableExists()
     schemasToDrop <- getSchemasToDrop()
-    _ <- dropSchemas(schemasToDrop)
-    schemaName <- createSchema(epoch)
+    _             <- dropSchemas(schemasToDrop)
+    schemaName    <- createSchema(epoch)
+    _             <- createTables(schemaName)
   } yield schemaName
 
   private def ensureStatusTableExists() = {
@@ -104,6 +105,19 @@ class AdminRepository(transactor: Transactor[IO]) {
       .map(_ => schemaName)
   }
 
+  def listSchemas: Future[List[String]] = {
+    sql"select schema_name from information_schema.schemata"
+      .query[String]
+      .to[List]
+      .transact(transactor)
+      .unsafeToFuture()
+  }
+
+  private def createTables(schemaName: String): Future[Int] = {
+    val createSchemaSql = Source.fromResource("create_db_schema.sql").mkString.replaceAll("__schema__", schemaName)
+    Fragment.const(createSchemaSql).update.run.transact(transactor).unsafeToFuture()
+  }
+
   private def initialiseIngestUser() = {
     val ingestorUser = Credentials().ingestor
     val database = Credentials().database
@@ -147,6 +161,15 @@ class AdminRepository(transactor: Transactor[IO]) {
           Future.successful(println(s"'reader' user already exists"))
       }
   }
+
+  def listUsers: Future[List[String]] = {
+    sql"SELECT usename AS role_name FROM pg_catalog.pg_user"
+      .query[String]
+      .to[List]
+      .transact(transactor)
+      .unsafeToFuture()
+  }
+
 }
 
 class IngestRepository(transactor: Transactor[IO]) {
@@ -156,7 +179,6 @@ class IngestRepository(transactor: Transactor[IO]) {
   val rootDir = "/mnt/efs/"
 
   def runAsyncTest() = {
-    println(s"runAsyncTest(): BEGIN")
     val procName = "call public.async_test()"
     Fragment
       .const(s"BEGIN;$procName;COMMIT;")
@@ -169,7 +191,6 @@ class IngestRepository(transactor: Transactor[IO]) {
         case Failure(x) => println(x); 0
       }
     Thread.sleep(1000)
-    println(s"runAsyncTest(): END")
   }
 
   // Does this belong here???
@@ -200,21 +221,23 @@ class IngestRepository(transactor: Transactor[IO]) {
     createLookupViewAndIndexes(schemaName)
   }
 
-  private def createLookupViewAndIndexes(schemaName: String): Future[Int] = {
+  def checkIfLookupViewCreated(schemaName: String): Future[Boolean] = {
+    sql"""select exists(
+            select 1
+            from pg_matviews
+              where schemaname = $schemaName
+            and matviewname = 'address_lookup')""".query[Boolean].unique.transact(transactor).unsafeToFuture()
+  }
+
+  private def createLookupViewAndIndexes(schemaName: String): Future[(Int, Int)] = {
     val createViewSql = Source
       .fromURL(getClass.getResource("/create_db_lookup_view_and_indexes.sql"))
-      .mkString
-    for {
-      f <- Fragment.const(createViewSql)
-        .update
-        .run
-        .transact(transactor)
-        .unsafeToFuture()
-      _ <-
-        sql"""BEGIN TRANSACTION; CALL create_address_lookup_view($schemaName); COMMIT;""".update.run
-          .transact(transactor)
-          .unsafeToFuture()
-    } yield f
+      .mkString.replaceAll("__schema_name__", schemaName)
+
+    (for {
+      f <- Fragment.const(createViewSql).update.run.transact(transactor)
+      v <- sql"""BEGIN TRANSACTION; CALL create_address_lookup_view($schemaName); COMMIT;""".update.run.transact(transactor)
+    } yield (f, v)).unsafeToFuture()
   }
 
   def checkLookupViewStatus(schemaName: String): Future[(String, String)] = {
@@ -294,6 +317,20 @@ object Repository {
 
   private lazy val adminTransactor: Transactor[IO] = adminXa()
   private lazy val ingestorTransactor: Transactor[IO] = ingestorXa()
+
+  lazy val testH2Transactor: Transactor[IO] = h2Xa()
+
+  private def h2Xa(): Transactor[IO] = {
+    implicit val cs: ContextShift[IO] =
+      IO.contextShift(implicitly[ExecutionContext])
+
+    Transactor.fromDriverManager[IO](
+      "org.h2.Driver",
+      s"jdbc:h2:mem:addressbasepremium;MODE=POSTGRESQL;DATABASE_TO_LOWER=TRUE;AUTOCOMMIT=TRUE",
+      "",
+      ""
+    )
+  }
 
   private def adminXa(): Transactor[IO] = {
     implicit val cs: ContextShift[IO] =

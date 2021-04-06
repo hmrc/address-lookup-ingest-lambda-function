@@ -1,14 +1,7 @@
 package processing
 
-import java.io.{
-  BufferedReader,
-  File,
-  FileInputStream,
-  FileOutputStream,
-  FileReader,
-  PrintWriter
-}
-import java.nio.file.Paths
+import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileReader, PrintWriter}
+import java.nio.file.{Files, Paths}
 import java.util.zip.ZipInputStream
 
 class Csv(private val root: String) {
@@ -32,6 +25,8 @@ class Csv(private val root: String) {
       .filter(_.getName.endsWith(".zip"))
       .flatMap(unpackZipFile)
       .foreach(f => processFile(typeToWriterMap)(f))
+
+    typeToWriterMap.foreach{case (_, out) => out.flush; out.close}
   }
 
   private def createWriterAndAddHeader(name: String, headers: Seq[String]) = {
@@ -80,6 +75,19 @@ object Csv {
   private val ID31_Org_Records = "ID31_Org_Records.csv"
   private val ID32_Class_Records = "ID32_Class_Records.csv"
   private val ID99_Trailer_Records = "ID99_Trailer_Records.csv"
+
+  val tableToFileNames = Map(
+    "abp_blpu" -> ID21_BLPU_Records,
+    "abp_delivery_point" -> ID28_DPA_Records,
+    "abp_lpi" -> ID24_LPI_Records,
+    "abp_crossref" -> ID23_XREF_Records,
+    "abp_classification" -> ID32_Class_Records,
+    "abp_street" -> ID11_Street_Records,
+    "abp_street_descriptor" -> ID15_StreetDesc_Records,
+    "abp_organisation" -> ID31_Org_Records,
+    "abp_successor" -> ID30_Successor_Records
+  )
+
 
   val fileNameToHeadingsMap: Map[String, Map[String, Object]] = Map(
     "10" -> Map(

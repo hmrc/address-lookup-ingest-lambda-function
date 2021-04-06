@@ -1,20 +1,17 @@
 package lambdas
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
-import repositories.Repository
+import repositories.{IngestRepository, Repository}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import scala.util.Try
 
 class CreateLookupViewFunction extends RequestHandler[String, Unit] {
   override def handleRequest(schemaName: String, contextNotUsed: Context): Unit = {
-    createLookupView(schemaName)
-    Try{Await.result(createLookupView(schemaName), 5.seconds)}
+    Await.ready(createLookupView(Repository.forIngest(), schemaName), 30.seconds) //This should be less than the lambda timeout
   }
 
-  private def createLookupView(schemaName: String) = {
-    val repository = Repository.forIngest()
+  private[lambdas] def createLookupView(repository: IngestRepository, schemaName: String) = {
     repository.createLookupView(schemaName)
   }
 }

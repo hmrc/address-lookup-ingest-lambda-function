@@ -1,7 +1,7 @@
 package lambdas
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
-import repositories.Repository
+import repositories.{Repository, AdminRepository}
 
 import java.util.{Map => jMap}
 import scala.concurrent.Await
@@ -9,11 +9,10 @@ import scala.concurrent.duration.DurationInt
 
 class DbSchemaInitialisationFunction extends RequestHandler[String, Unit] {
   override def handleRequest(epoch: String, contextNotUsed: Context): Unit = {
-    Await.result(initialiseDbSchema(epoch), 5.seconds)
+    Await.result(initialiseDbSchema(Repository.forAdmin(), epoch), 5.seconds)
   }
 
-  private def initialiseDbSchema(epoch: String) = {
-    val repository = Repository.forAdmin()
+  private[lambdas] def initialiseDbSchema(repository: AdminRepository, epoch: String) = {
     repository.initialiseSchema(epoch)
   }
 }
