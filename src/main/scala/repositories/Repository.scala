@@ -214,6 +214,14 @@ class IngestRepository(transactor: Transactor[IO]) {
           .unsafeToFuture()
     } yield f
   }
+
+  def checkLookupViewStatus(schemaName: String): Future[(String, String)] = {
+    sql"""SELECT status, error_message FROM public.address_lookup_status WHERE schema_name = $schemaName"""
+      .query[(String, String)]
+      .unique
+      .transact(transactor)
+      .unsafeToFuture()
+  }
 }
 
 object Repository {
