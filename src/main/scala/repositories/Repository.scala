@@ -150,6 +150,7 @@ class AdminRepository(transactor: Transactor[IO]) {
 }
 
 class IngestRepository(transactor: Transactor[IO]) {
+
   import Repository._
 
   val rootDir = "/mnt/efs/"
@@ -183,8 +184,9 @@ class IngestRepository(transactor: Transactor[IO]) {
     "abp_organisation" -> "ID31_Org_Records.csv",
     "abp_successor" -> "ID30_Successor_Records.csv"
   )
+
   def ingestFiles(schemaName: String, processDir: String) =
-    Future.sequence(recordToFileNames.map{case (t, f) => ingestFile(s"$schemaName.$t",s"$processDir/$f")})
+    Future.sequence(recordToFileNames.map { case (t, f) => ingestFile(s"$schemaName.$t", s"$processDir/$f") })
       .map(_.toList.size)
 
   def ingestFile(table: String, filePath: String) = {
@@ -219,6 +221,67 @@ class IngestRepository(transactor: Transactor[IO]) {
     sql"""SELECT status, error_message FROM public.address_lookup_status WHERE schema_name = $schemaName"""
       .query[(String, String)]
       .unique
+      .transact(transactor)
+      .unsafeToFuture()
+  }
+
+  def finaliseSchema(epoch: String, schemaName: String): Future[Boolean] = for {
+    status <- getSchemaStatus(schemaName)
+    ok <- isNewSchemaWithinChangeTolerance(schemaName)
+    _  = if(ok) {
+      switchAddressLookupViewToNew(schemaName)
+      cleanupOldEpochDirectories(epoch)
+    }
+  } yield ok
+
+  private def switchAddressLookupViewToNew(schemaName: String): Future[Int] = {
+    sql"""
+         | CREATE OR REPLACE VIEW public.address_lookup AS SELECT * FROM address_lookup;
+         | GRANT SELECT ON public.address_lookup TO addresslookupreader;
+         | UPDATE public.address_lookup_status SET status = 'finalised' WHERE schema_name = $schemaName;
+         |""".stripMargin.update.run.transact(transactor).unsafeToFuture()
+  }
+
+  private def cleanupOldEpochDirectories(epoch: String): Future[Unit] = {
+    // TODO
+    Future.successful(())
+  }
+
+  private def getSchemaStatus(schemaName: String): Future[(String, String)] = {
+    sql"""SELECT status, error_message FROM public.address_lookup_status WHERE schema_name = $schemaName"""
+      .query[(String, String)]
+      .unique
+      .transact(transactor)
+      .unsafeToFuture()
+  }
+
+  private def isNewSchemaWithinChangeTolerance(latestSchemaName: String): Future[Boolean] = {
+    getSchemaToCompare(latestSchemaName).flatMap {
+      case Some(previousSchemaName) => for {
+        previousCount <- getCount(previousSchemaName)
+        latestCount <- getCount(latestSchemaName)
+        percentageChange = ((latestCount - previousCount) / previousCount) * 100.0
+        withinTolerance = 0.3 >= percentageChange && percentageChange >= 0
+      } yield withinTolerance
+
+      case None => Future.successful(true)
+    }
+  }
+
+  private def getCount(schemaName: String): Future[Int] =
+    sql"SELECT COUNT(*) FROM ${schemaName}.abp_street_descriptor".query[Int].unique.transact(transactor)
+      .unsafeToFuture()
+
+  private def getSchemaToCompare(latestSchemaName: String): Future[Option[String]] = {
+    sql"""    SELECT schema_name
+               FROM public.address_lookup_status
+               WHERE status = 'finalised'
+               AND schema_name <> $latestSchemaName
+               ORDER BY timestamp DESC
+               LIMIT 1
+           """
+      .query[String]
+      .option
       .transact(transactor)
       .unsafeToFuture()
   }
