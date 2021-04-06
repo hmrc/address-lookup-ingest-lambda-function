@@ -14,5 +14,4 @@ class CsvTest extends AnyWordSpec {
       }
     }
   }
-
 }
