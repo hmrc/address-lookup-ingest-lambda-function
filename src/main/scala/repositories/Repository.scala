@@ -33,7 +33,6 @@ import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
-import scala.util.{Failure, Success, Try}
 
 trait Repository {}
 
@@ -41,28 +40,35 @@ class AdminRepository(transactor: Transactor[IO]) {
 
   import Repository._
 
-  def initialiseUsers(): Future[Unit] = for {
-    _ <- initialiseIngestUser()
-    _ <- initialiseReaderUser()
-  } yield ()
+  def initialiseUsers(): Future[Unit] = {
+    println(s"initialiseUsers()")
+    for {
+      _ <- initialiseIngestUser()
+      _ <- initialiseReaderUser()
+    } yield ()
+  }
 
-  def initialiseSchema(epoch: String): Future[String] = for {
-    _             <- ensureStatusTableExists()
-    schemasToDrop <- getSchemasToDrop()
-    _             <- dropSchemas(schemasToDrop)
-    schemaName    <- createSchema(epoch)
-    _             <- createTables(schemaName)
-  } yield schemaName
+  def initialiseSchema(epoch: String): Future[String] = {
+    println(s"initialiseSchema($epoch)")
+    for {
+      _ <- ensureStatusTableExists()
+      schemasToDrop <- getSchemasToDrop()
+      _ <- dropSchemas(schemasToDrop)
+      schemaName <- createSchema(epoch)
+      _ <- createTables(schemaName)
+      _ <- insertNewSchemaStatus(schemaName)
+    } yield schemaName
+  }
 
   private def ensureStatusTableExists() = {
     sql"""CREATE TABLE IF NOT EXISTS public.address_lookup_status (
          |    schema_name VARCHAR(64) NOT NULL PRIMARY KEY,
          |    status      VARCHAR(32) NOT NULL,
          |    error_message VARCHAR NULL,
-         |    timestamp   TIMESTAMP NOT NULL
-         |)""".stripMargin.update.run
-      .transact(transactor)
-      .unsafeToFuture()
+         |    timestamp   TIMESTAMP NOT NULL);""".stripMargin
+                                                 .update.run
+                                                 .transact(transactor)
+                                                 .unsafeToFuture()
   }
 
   private def getSchemasToDrop() = {
@@ -71,42 +77,50 @@ class AdminRepository(transactor: Transactor[IO]) {
          |WHERE schema_name NOT IN (
          |    SELECT schema_name
          |    FROM public.address_lookup_status
-         |    WHERE status = 'completed'
+         |    WHERE status = 'finalised'
          |    ORDER BY timestamp DESC
-         |    LIMIT 1
-         |)""".stripMargin
-      .query[String]
-      .to[List]
-      .transact(transactor)
-      .unsafeToFuture()
+         |    LIMIT 1);""".stripMargin
+                          .query[String]
+                          .to[List]
+                          .transact(transactor)
+                          .unsafeToFuture()
   }
 
   private def dropSchemas(schemas: List[String]) = {
     Future.sequence(
       schemas
         .map(schema =>
-          sql"""DROP SCHEMA IF EXISTS $schema CASCADE;
-                DELETE FROM public.address_lookup_status WHERE schema_name = '$schema';"""
+          Fragment.const(
+            s"""DROP SCHEMA IF EXISTS $schema CASCADE;
+               | DELETE FROM public.address_lookup_status
+               | WHERE schema_name = '$schema';""".stripMargin)
         )
-        .map(_.update.run.transact(transactor).unsafeToFuture())
+        .map { ssql =>
+          ssql.update.run.transact(transactor).unsafeToFuture()
+        }
     )
   }
 
   private val timestampFormat = DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")
 
-  private def createSchema(epoch: String) = {
+  private def schemaNameFor(epoch: String) = {
     val timestamp = LocalDateTime.now(ZoneId.of("UTC"))
-    val schemaName = s"ab${epoch}_${timestampFormat.format(timestamp)}"
-    (sql"""CREATE SCHEMA IF NOT EXISTS """ ++ Fragment.const(schemaName))
-      .update
-      .run
-      .transact(transactor)
-      .unsafeToFuture()
-      .map(_ => schemaName)
+    s"ab${epoch}_${timestampFormat.format(timestamp)}"
+  }
+
+  private def createSchema(epoch: String) = {
+    val schemaName = schemaNameFor(epoch)
+    Fragment.const(s"CREATE SCHEMA IF NOT EXISTS $schemaName")
+            .update
+            .run
+            .transact(transactor)
+            .unsafeToFuture()
+            .map(_ => schemaName)
   }
 
   def listSchemas: Future[List[String]] = {
-    sql"select schema_name from information_schema.schemata"
+    println(s"listSchemas")
+    sql"SELECT schema_name FROM information_schema.schemata"
       .query[String]
       .to[List]
       .transact(transactor)
@@ -114,8 +128,18 @@ class AdminRepository(transactor: Transactor[IO]) {
   }
 
   private def createTables(schemaName: String): Future[Int] = {
-    val createSchemaSql = Source.fromResource("create_db_schema.sql").mkString.replaceAll("__schema__", schemaName)
+    val createSchemaSql =
+      Source.fromResource("create_db_schema.sql").mkString.replaceAll("__schema__", schemaName)
     Fragment.const(createSchemaSql).update.run.transact(transactor).unsafeToFuture()
+  }
+
+  private def insertNewSchemaStatus(schemaName: String): Future[Int] = {
+    sql"""INSERT INTO public.address_lookup_status(schema_name, status, timestamp)
+         | VALUES($schemaName, 'schema_created', NOW())""".stripMargin
+                                                          .update
+                                                          .run
+                                                          .transact(transactor)
+                                                          .unsafeToFuture()
   }
 
   private def initialiseIngestUser() = {
@@ -127,15 +151,15 @@ class AdminRepository(transactor: Transactor[IO]) {
       .transact(transactor)
       .unsafeToFuture()
       .flatMap {
-        case None =>
+        case None    =>
           sql"""REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-               |CREATE USER $ingestorUser;
-               |GRANT rds_iam TO $ingestorUser;
-               |GRANT ALL ON DATABASE $database to $ingestorUser;
-               |GRANT CREATE ON SCHEMA public TO $ingestorUser;
+               | CREATE USER $ingestorUser;
+               | GRANT rds_iam TO $ingestorUser;
+               | GRANT ALL ON DATABASE $database TO $ingestorUser;
+               | GRANT CREATE ON SCHEMA public TO $ingestorUser;
                |""".stripMargin.update.run
-            .transact(transactor)
-            .unsafeToFuture()
+                   .transact(transactor)
+                   .unsafeToFuture()
         case Some(_) =>
           Future.successful(println(s"'ingestor' user already exists"))
       }
@@ -151,18 +175,19 @@ class AdminRepository(transactor: Transactor[IO]) {
       .transact(transactor)
       .unsafeToFuture()
       .flatMap {
-        case None =>
+        case None    =>
           sql"""CREATE USER $readerUser ENCRYPTED PASSWORD '$readerPassword';
-               |GRANT CONNECT ON DATABASE $database TO $readerUser;
-               |""".stripMargin.update.run
-            .transact(transactor)
-            .unsafeToFuture()
+               |GRANT CONNECT ON DATABASE $database TO $readerUser;""".stripMargin
+                                                                      .update.run
+                                                                      .transact(transactor)
+                                                                      .unsafeToFuture()
         case Some(_) =>
           Future.successful(println(s"'reader' user already exists"))
       }
   }
 
   def listUsers: Future[List[String]] = {
+    println(s"listUsers")
     sql"SELECT usename AS role_name FROM pg_catalog.pg_user"
       .query[String]
       .to[List]
@@ -178,21 +203,6 @@ class IngestRepository(transactor: Transactor[IO]) {
 
   val rootDir = "/mnt/efs/"
 
-  def runAsyncTest() = {
-    val procName = "call public.async_test()"
-    Fragment
-      .const(s"BEGIN;$procName;COMMIT;")
-      .update
-      .run
-      .transact(transactor)
-      .unsafeToFuture()
-      .onComplete {
-        case Success(i) => println("SUCCESS"); 1
-        case Failure(x) => println(x); 0
-      }
-    Thread.sleep(1000)
-  }
-
   // Does this belong here???
   val recordToFileNames = Map(
     "abp_blpu" -> "ID21_BLPU_Records.csv",
@@ -206,107 +216,135 @@ class IngestRepository(transactor: Transactor[IO]) {
     "abp_successor" -> "ID30_Successor_Records.csv"
   )
 
-  def ingestFiles(schemaName: String, processDir: String) =
-    Future.sequence(recordToFileNames.map { case (t, f) => ingestFile(s"$schemaName.$t", s"$processDir/$f") })
-      .map(_.toList.size)
+  def ingestFiles(schemaName: String, processDir: String): Future[Int] = {
+    println(s"ingestFiles($schemaName, $processDir)")
+    Future.sequence(
+      recordToFileNames.map {
+        case (t, f) => ingestFile(s"$schemaName.$t", s"$processDir/$f")
+      }
+    ).map(_.toList.size)
+  }
 
-  def ingestFile(table: String, filePath: String) = {
-    // Should this be here???
+  def ingestFile(table: String, filePath: String): Future[Long] = {
+    println(s"ingestFile($table, $filePath)")
     val in = Files.newInputStream(new File(filePath).toPath, StandardOpenOption.READ)
-    PHC.pgGetCopyAPI(PFCM.copyIn(s"""COPY $table FROM STDIN WITH (FORMAT CSV, HEADER, DELIMITER ',')""", in))
-      .transact(transactor).unsafeToFuture()
+    PHC.pgGetCopyAPI(
+      PFCM.copyIn(s"""COPY $table FROM STDIN WITH (FORMAT CSV, HEADER, DELIMITER ',');""", in)
+    ).transact(transactor).unsafeToFuture()
   }
 
-  def createLookupView(schemaName: String) = {
-    createLookupViewAndIndexes(schemaName)
-  }
-
-  def checkIfLookupViewCreated(schemaName: String): Future[Boolean] = {
-    sql"""select exists(
-            select 1
-            from pg_matviews
-              where schemaname = $schemaName
-            and matviewname = 'address_lookup')""".query[Boolean].unique.transact(transactor).unsafeToFuture()
-  }
-
-  private def createLookupViewAndIndexes(schemaName: String): Future[(Int, Int)] = {
-    val createViewSql = Source
-      .fromURL(getClass.getResource("/create_db_lookup_view_and_indexes.sql"))
-      .mkString.replaceAll("__schema_name__", schemaName)
+  def createLookupView(schemaName: String): Future[(Int, Int)] = {
+    println(s"createLookupView($schemaName)")
+    val createViewSql =
+      Source.fromURL(getClass.getResource("/create_db_lookup_view_and_indexes.sql"))
+            .mkString.replaceAll("__schema_name__", schemaName)
 
     (for {
       f <- Fragment.const(createViewSql).update.run.transact(transactor)
-      v <- sql"""BEGIN TRANSACTION; CALL create_address_lookup_view($schemaName); COMMIT;""".update.run.transact(transactor)
+      v <- Fragment.const(
+        s"""BEGIN TRANSACTION;
+           | CALL $schemaName.create_address_lookup_view('$schemaName');
+           | COMMIT;""".stripMargin).update.run.transact(transactor)
     } yield (f, v)).unsafeToFuture()
   }
 
-  def checkLookupViewStatus(schemaName: String): Future[(String, String)] = {
-    sql"""SELECT status, error_message FROM public.address_lookup_status WHERE schema_name = $schemaName"""
-      .query[(String, String)]
-      .unique
-      .transact(transactor)
-      .unsafeToFuture()
+  def checkIfLookupViewCreated(schemaName: String): Future[Boolean] = {
+    println(s"checkIfLookupViewCreated($schemaName)")
+    sql"""SELECT EXISTS(
+         |   SELECT 1
+         |   FROM pg_matviews
+         |     WHERE schemaname = $schemaName
+         |   AND matviewname = 'address_lookup')""".stripMargin
+                                                   .query[Boolean]
+                                                   .unique
+                                                   .transact(transactor)
+                                                   .unsafeToFuture()
   }
 
-  def finaliseSchema(epoch: String, schemaName: String): Future[Boolean] = for {
-    status <- getSchemaStatus(schemaName)
-    ok <- isNewSchemaWithinChangeTolerance(schemaName)
-    _  = if(ok) {
-      switchAddressLookupViewToNew(schemaName)
-      cleanupOldEpochDirectories(epoch)
-    }
-  } yield ok
+  def checkLookupViewStatus(schemaName: String): Future[(String, Option[String])] = {
+    println(s"checkLookupViewStatus($schemaName)")
+    sql"""SELECT status, error_message
+         | FROM   public.address_lookup_status
+         | WHERE  schema_name = $schemaName""".stripMargin
+                                              .query[(String, Option[String])]
+                                              .unique
+                                              .transact(transactor)
+                                              .unsafeToFuture()
+  }
 
-  private def switchAddressLookupViewToNew(schemaName: String): Future[Int] = {
-    sql"""
-         | CREATE OR REPLACE VIEW public.address_lookup AS SELECT * FROM address_lookup;
+  def finaliseSchema(epoch: String, schemaName: String): Future[Boolean] = {
+    println(s"finaliseSchema($epoch, $schemaName)")
+    for {
+      status <- getSchemaStatus(schemaName)
+      ok <- isNewSchemaWithinChangeTolerance(schemaName)
+      proceed = status._1 == "completed" && ok
+      _ <- switchAddressLookupViewToNew(proceed, schemaName)
+      _ =  cleanupOldEpochDirectories(proceed, epoch)
+    } yield ok
+  }
+
+  private def switchAddressLookupViewToNew(proceed: Boolean, schemaName: String): Future[Int] = {
+    if (!proceed) Future.successful(0)
+
+    Fragment.const(
+      s"""CREATE OR REPLACE VIEW public.address_lookup AS SELECT * FROM ${schemaName}.address_lookup;
          | GRANT SELECT ON public.address_lookup TO addresslookupreader;
-         | UPDATE public.address_lookup_status SET status = 'finalised' WHERE schema_name = $schemaName;
-         |""".stripMargin.update.run.transact(transactor).unsafeToFuture()
+         | UPDATE public.address_lookup_status SET status = 'finalised' WHERE schema_name = '$schemaName';"""
+        .stripMargin)
+            .update
+            .run
+            .transact(transactor)
+            .unsafeToFuture()
   }
 
-  private def cleanupOldEpochDirectories(epoch: String): Future[Unit] = {
-    // TODO
-    Future.successful(())
+  private def cleanupOldEpochDirectories(proceed: Boolean, epoch: String): Unit = {
+    os.walk(
+      path = os.Path(rootDir),
+      skip = _.baseName == epoch,
+      maxDepth = 1
+    ).foreach(os.remove.all)
   }
 
-  private def getSchemaStatus(schemaName: String): Future[(String, String)] = {
-    sql"""SELECT status, error_message FROM public.address_lookup_status WHERE schema_name = $schemaName"""
-      .query[(String, String)]
-      .unique
-      .transact(transactor)
-      .unsafeToFuture()
+  private def getSchemaStatus(schemaName: String): Future[(String, Option[String])] = {
+    sql"""SELECT status, error_message
+         | FROM  public.address_lookup_status
+         | WHERE schema_name = $schemaName""".stripMargin
+                                             .query[(String, Option[String])]
+                                             .unique
+                                             .transact(transactor)
+                                             .unsafeToFuture()
   }
 
   private def isNewSchemaWithinChangeTolerance(latestSchemaName: String): Future[Boolean] = {
     getSchemaToCompare(latestSchemaName).flatMap {
-      case Some(previousSchemaName) => for {
-        previousCount <- getCount(previousSchemaName)
-        latestCount <- getCount(latestSchemaName)
-        percentageChange = ((latestCount - previousCount) / previousCount) * 100.0
-        withinTolerance = 0.3 >= percentageChange && percentageChange >= 0
-      } yield withinTolerance
+      case Some(previousSchemaName) =>
+        for {
+          latestCount <- getCount(latestSchemaName)
+          previousCount <- getCount(previousSchemaName)
+          percentageChange = ((latestCount - previousCount) / previousCount) * 100.0
+          withinTolerance = 0.3 >= percentageChange && percentageChange >= 0
+        } yield withinTolerance
 
       case None => Future.successful(true)
     }
   }
 
-  private def getCount(schemaName: String): Future[Int] =
-    sql"SELECT COUNT(*) FROM ${schemaName}.abp_street_descriptor".query[Int].unique.transact(transactor)
-      .unsafeToFuture()
+  private def getCount(schemaName: String): Future[Int] = {
+    Fragment.const(s"SELECT COUNT(*) FROM ${schemaName}.abp_street_descriptor;")
+            .query[Int].unique.transact(transactor).unsafeToFuture()
+  }
 
   private def getSchemaToCompare(latestSchemaName: String): Future[Option[String]] = {
-    sql"""    SELECT schema_name
-               FROM public.address_lookup_status
-               WHERE status = 'finalised'
-               AND schema_name <> $latestSchemaName
-               ORDER BY timestamp DESC
-               LIMIT 1
-           """
-      .query[String]
-      .option
-      .transact(transactor)
-      .unsafeToFuture()
+    sql"""SELECT schema_name
+         | FROM   public.address_lookup_status
+         | WHERE status = 'finalised'
+         | AND   schema_name <> $latestSchemaName
+         | ORDER BY timestamp DESC
+         | LIMIT 1;""".stripMargin
+                      .query[String]
+                      .option
+                      .transact(transactor)
+                      .unsafeToFuture()
   }
 }
 
@@ -317,20 +355,6 @@ object Repository {
 
   private lazy val adminTransactor: Transactor[IO] = adminXa()
   private lazy val ingestorTransactor: Transactor[IO] = ingestorXa()
-
-  lazy val testH2Transactor: Transactor[IO] = h2Xa()
-
-  private def h2Xa(): Transactor[IO] = {
-    implicit val cs: ContextShift[IO] =
-      IO.contextShift(implicitly[ExecutionContext])
-
-    Transactor.fromDriverManager[IO](
-      "org.h2.Driver",
-      s"jdbc:h2:mem:addressbasepremium;MODE=POSTGRESQL;DATABASE_TO_LOWER=TRUE;AUTOCOMMIT=TRUE",
-      "",
-      ""
-    )
-  }
 
   private def adminXa(): Transactor[IO] = {
     implicit val cs: ContextShift[IO] =
@@ -389,16 +413,16 @@ object Repository {
                                  username: String
                                ) = {
     val generator = RdsIamAuthTokenGenerator.builder
-      .credentials(new DefaultAWSCredentialsProviderChain)
-      .region(region)
-      .build
+                                            .credentials(new DefaultAWSCredentialsProviderChain)
+                                            .region(region)
+                                            .build
 
     val authToken = generator.getAuthToken(
       GetIamAuthTokenRequest.builder
-        .hostname(hostName)
-        .port(port.toInt)
-        .userName(username)
-        .build
+                            .hostname(hostName)
+                            .port(port.toInt)
+                            .userName(username)
+                            .build
     )
 
     authToken
@@ -424,7 +448,7 @@ object Repository {
 
   object Credentials {
     def apply(): Credentials = {
-      new LocalCredentials()
+      new RdsCredentials()
     }
   }
 

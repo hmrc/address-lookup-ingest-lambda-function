@@ -17,7 +17,7 @@ class FinaliseFunction extends RequestHandler[jMap[String, String], Boolean] {
     Await.result(finaliseSchema(Repository.forIngest(), epoch, schemaName), 5.seconds)
   }
 
-  private def finaliseSchema(repository: IngestRepository, epoch: String, schemaName: String): Future[Boolean] = {
+  private[lambdas] def finaliseSchema(repository: IngestRepository, epoch: String, schemaName: String): Future[Boolean] = {
     repository.finaliseSchema(epoch, schemaName)
   }
 }

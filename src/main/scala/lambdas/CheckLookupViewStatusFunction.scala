@@ -14,9 +14,11 @@ class CheckLookupViewStatusFunction extends RequestHandler[String, jMap[String, 
     Await.result(checkLookupViewStatus(Repository.forIngest(), schemaName), 5.seconds).asJava
   }
 
-  private def checkLookupViewStatus(repository: IngestRepository, schemaName: String): Future[Map[String, String]] = {
+  private[lambdas] def checkLookupViewStatus(repository: IngestRepository, schemaName: String): Future[Map[String, String]] = {
     repository.checkLookupViewStatus(schemaName)
-      .map{case (status, errorMessage) => Map("status" -> status, "errorMessage" -> errorMessage)}
+      .map{
+        case (status, errorMessage) => Map("status" -> status, "errorMessage" -> errorMessage.getOrElse(null))
+      }
   }
 }
 

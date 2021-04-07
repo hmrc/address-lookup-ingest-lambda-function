@@ -6,6 +6,7 @@ import java.util.zip.ZipInputStream
 
 class Csv(private val root: String) {
   def process(): Unit = {
+    println(s"Csv.process($root)")
     val typeToWriterMap: Map[String, PrintWriter] =
       Csv.fileNameToHeadingsMap
         .map { case (rid, m) =>

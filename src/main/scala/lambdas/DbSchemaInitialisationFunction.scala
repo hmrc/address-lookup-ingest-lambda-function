@@ -7,8 +7,8 @@ import java.util.{Map => jMap}
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class DbSchemaInitialisationFunction extends RequestHandler[String, Unit] {
-  override def handleRequest(epoch: String, contextNotUsed: Context): Unit = {
+class DbSchemaInitialisationFunction extends RequestHandler[String, String] {
+  override def handleRequest(epoch: String, contextNotUsed: Context): String = {
     Await.result(initialiseDbSchema(Repository.forAdmin(), epoch), 5.seconds)
   }
 

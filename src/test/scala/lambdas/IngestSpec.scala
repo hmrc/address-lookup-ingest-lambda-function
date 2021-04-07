@@ -23,7 +23,7 @@ class IngestSpec extends AsyncWordSpec with Matchers {
       "initialiseDbSchema is executed" in {
         (for {
           schemaName <- new DbSchemaInitialisationFunction().initialiseDbSchema(adminRepository, epoch)
-          schemas    <- adminRepository.listSchemas
+          schemas <- adminRepository.listSchemas
         } yield (schemaName, schemas))
           .map {
             case (schema, schemas) =>
@@ -37,7 +37,7 @@ class IngestSpec extends AsyncWordSpec with Matchers {
     "create users" when {
       "initialiseDbUsers is executed" in {
         (for {
-          _     <- new DbUserInitialisationFunction().initialiseDbUsers(adminRepository)
+          _ <- new DbUserInitialisationFunction().initialiseDbUsers(adminRepository)
           users <- adminRepository.listUsers
         } yield users)
           .map(users => users should contain allOf("addresslookupingestor", "addresslookupreader"))
@@ -48,16 +48,35 @@ class IngestSpec extends AsyncWordSpec with Matchers {
       "ingest is executed" in {
         new AddressIngestFunction().ingestFiles(ingestRepository, schemaName,
           new File("src/test/resources/csv/").getAbsolutePath)
-          .map(inserted => inserted should be > 0)
+                                   .map(inserted => inserted should be > 0)
       }
     }
 
     "create lookup view" when {
       "createLookupView is executed - the data is probably not correct here as there are no rows - TODO" in {
         for {
-          _       <- new CreateLookupViewFunction().createLookupView(ingestRepository, schemaName)
+          _ <- new CreateLookupViewFunction().createLookupView(ingestRepository, schemaName)
           created <- ingestRepository.checkIfLookupViewCreated(schemaName)
         } yield created shouldBe true
+      }
+    }
+
+    "check lookup view was created" when {
+      "checkLookupViewStatus is executed" in {
+        for {
+          resultMap <- new lambdas.CheckLookupViewStatusFunction().checkLookupViewStatus(ingestRepository, schemaName)
+        } yield {
+          resultMap("status") shouldBe "completed"
+          resultMap("errorMessage") shouldBe null
+        }
+      }
+    }
+
+    "finalise schema" when {
+      "finaliseSchema is executed" in {
+        for {
+          finalised <- new FinaliseFunction().finaliseSchema(ingestRepository, epoch, schemaName)
+        } yield finalised shouldBe true
       }
     }
   }
