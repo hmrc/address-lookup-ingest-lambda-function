@@ -1,7 +1,9 @@
 ThisBuild / name := "address-lookup-file-ingest-lambda-functions"
 ThisBuild / version := "1.0"
 ThisBuild / scalaVersion := "2.12.12"
-ThisBuild / assemblyJarName := assemblyName
+
+ThisBuild / assemblyJarName := "address-lookup-file-ingest-lambda-functions_2.12-1.0.jar"
+
 ThisBuild / parallelExecution := false
 
 val jacksonVersion = "2.9.7"
@@ -20,5 +22,3 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-postgres" % doobieVersion,
   "org.scalatest" %% "scalatest" % "3.2.2" % Test
 )
-
-def assemblyName = s"${ThisBuild / name}_${ThisBuild / scalaVersion}-${ThisBuild / version}.jar"
