@@ -55,7 +55,6 @@ class AdminRepository(transactor: Transactor[IO]) {
   } yield schemaName
 
   private def ensureStatusTableExists() = {
-    println(s"ensureStatusTableExists")
     sql"""CREATE TABLE IF NOT EXISTS public.address_lookup_status (
          |    schema_name VARCHAR(64) NOT NULL PRIMARY KEY,
          |    status      VARCHAR(32) NOT NULL,
@@ -67,7 +66,6 @@ class AdminRepository(transactor: Transactor[IO]) {
   }
 
   private def getSchemasToDrop() = {
-    println(s"getSchemasToDrop")
     sql"""SELECT schema_name
          |FROM public.address_lookup_status
          |WHERE schema_name NOT IN (
@@ -105,6 +103,14 @@ class AdminRepository(transactor: Transactor[IO]) {
       .transact(transactor)
       .unsafeToFuture()
       .map(_ => schemaName)
+  }
+
+  def listSchemas: Future[List[String]] = {
+    sql"select schema_name from information_schema.schemata"
+      .query[String]
+      .to[List]
+      .transact(transactor)
+      .unsafeToFuture()
   }
 
   private def createTables(schemaName: String): Future[Int] = {
@@ -155,6 +161,15 @@ class AdminRepository(transactor: Transactor[IO]) {
           Future.successful(println(s"'reader' user already exists"))
       }
   }
+
+  def listUsers: Future[List[String]] = {
+    sql"SELECT usename AS role_name FROM pg_catalog.pg_user"
+      .query[String]
+      .to[List]
+      .transact(transactor)
+      .unsafeToFuture()
+  }
+
 }
 
 class IngestRepository(transactor: Transactor[IO]) {
@@ -164,7 +179,6 @@ class IngestRepository(transactor: Transactor[IO]) {
   val rootDir = "/mnt/efs/"
 
   def runAsyncTest() = {
-    println(s"runAsyncTest(): BEGIN")
     val procName = "call public.async_test()"
     Fragment
       .const(s"BEGIN;$procName;COMMIT;")
@@ -177,7 +191,6 @@ class IngestRepository(transactor: Transactor[IO]) {
         case Failure(x) => println(x); 0
       }
     Thread.sleep(1000)
-    println(s"runAsyncTest(): END")
   }
 
   // Does this belong here???
@@ -208,21 +221,23 @@ class IngestRepository(transactor: Transactor[IO]) {
     createLookupViewAndIndexes(schemaName)
   }
 
-  private def createLookupViewAndIndexes(schemaName: String): Future[Int] = {
+  def checkIfLookupViewCreated(schemaName: String): Future[Boolean] = {
+    sql"""select exists(
+            select 1
+            from pg_matviews
+              where schemaname = $schemaName
+            and matviewname = 'address_lookup')""".query[Boolean].unique.transact(transactor).unsafeToFuture()
+  }
+
+  private def createLookupViewAndIndexes(schemaName: String): Future[(Int, Int)] = {
     val createViewSql = Source
       .fromURL(getClass.getResource("/create_db_lookup_view_and_indexes.sql"))
-      .mkString
-    for {
-      f <- Fragment.const(createViewSql)
-        .update
-        .run
-        .transact(transactor)
-        .unsafeToFuture()
-      _ <-
-        sql"""BEGIN TRANSACTION; CALL create_address_lookup_view($schemaName); COMMIT;""".update.run
-          .transact(transactor)
-          .unsafeToFuture()
-    } yield f
+      .mkString.replaceAll("__schema_name__", schemaName)
+
+    (for {
+      f <- Fragment.const(createViewSql).update.run.transact(transactor)
+      v <- sql"""BEGIN TRANSACTION; CALL create_address_lookup_view($schemaName); COMMIT;""".update.run.transact(transactor)
+    } yield (f, v)).unsafeToFuture()
   }
 
   def checkLookupViewStatus(schemaName: String): Future[(String, String)] = {
@@ -311,7 +326,7 @@ object Repository {
 
     Transactor.fromDriverManager[IO](
       "org.h2.Driver",
-      s"jdbc:h2:mem:;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;",
+      s"jdbc:h2:mem:addressbasepremium;MODE=POSTGRESQL;DATABASE_TO_LOWER=TRUE;AUTOCOMMIT=TRUE",
       "",
       ""
     )

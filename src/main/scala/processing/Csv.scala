@@ -76,6 +76,19 @@ object Csv {
   private val ID32_Class_Records = "ID32_Class_Records.csv"
   private val ID99_Trailer_Records = "ID99_Trailer_Records.csv"
 
+  val tableToFileNames = Map(
+    "abp_blpu" -> ID21_BLPU_Records,
+    "abp_delivery_point" -> ID28_DPA_Records,
+    "abp_lpi" -> ID24_LPI_Records,
+    "abp_crossref" -> ID23_XREF_Records,
+    "abp_classification" -> ID32_Class_Records,
+    "abp_street" -> ID11_Street_Records,
+    "abp_street_descriptor" -> ID15_StreetDesc_Records,
+    "abp_organisation" -> ID31_Org_Records,
+    "abp_successor" -> ID30_Successor_Records
+  )
+
+
   val fileNameToHeadingsMap: Map[String, Map[String, Object]] = Map(
     "10" -> Map(
       "file_name" -> ID10_Header_Records,
