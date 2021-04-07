@@ -83,7 +83,6 @@ BEGIN
         timestamp = now()
     WHERE schema_name = the_schema_name;
 
-
     CREATE INDEX IF NOT EXISTS address_lookup_postcode_idx
         ON address_lookup (postcode);
 
