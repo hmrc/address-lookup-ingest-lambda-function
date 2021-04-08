@@ -9,7 +9,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 import scala.collection.JavaConverters._
 
-class CheckLookupViewStatusFunction extends RequestHandler[String, jMap[String, String]] {
+class AddressLookupCheckStatusLambdaFunction extends RequestHandler[String, jMap[String, String]] {
   override def handleRequest(schemaName: String, contextNotUsed: Context): jMap[String, String] = {
     Await.result(checkLookupViewStatus(Repository.forIngest(), schemaName), 5.seconds).asJava
   }
@@ -22,6 +22,6 @@ class CheckLookupViewStatusFunction extends RequestHandler[String, jMap[String, 
   }
 }
 
-object CheckLookupViewStatusFunction extends App {
-  new CheckLookupViewStatusFunction().handleRequest(null, null)
+object AddressLookupCheckStatusLambdaFunction extends App {
+  new AddressLookupCheckStatusLambdaFunction().handleRequest(null, null)
 }

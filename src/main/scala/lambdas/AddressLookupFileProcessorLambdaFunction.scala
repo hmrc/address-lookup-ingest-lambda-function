@@ -5,9 +5,9 @@ import processing.Csv
 
 import java.util.{Map => jMap}
 
-class AddressFileProcessingFunction extends RequestHandler[jMap[String, String], String] {
-  override def handleRequest(batch_info: jMap[String, String], context: Context /*Not used*/): String = {
-    val batchDir = batch_info.get("batchDir")
+class AddressLookupFileProcessorLambdaFunction extends RequestHandler[jMap[String, Object], String] {
+  override def handleRequest(batch_info: jMap[String, Object], context: Context /*Not used*/): String = {
+    val batchDir = batch_info.get("batchDir").asInstanceOf[String]
     processFiles(batchDir)
     batchDir
   }

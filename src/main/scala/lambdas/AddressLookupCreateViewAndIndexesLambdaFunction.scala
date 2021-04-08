@@ -6,7 +6,7 @@ import repositories.{IngestRepository, Repository}
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class CreateLookupViewFunction extends RequestHandler[String, Unit] {
+class AddressLookupCreateViewAndIndexesLambdaFunction extends RequestHandler[String, Unit] {
   override def handleRequest(schemaName: String, contextNotUsed: Context): Unit = {
     Await.result(createLookupView(Repository.forIngest(), schemaName), 10.seconds) //This should be less than the lambda timeout
     Thread.sleep(5000)
@@ -17,6 +17,6 @@ class CreateLookupViewFunction extends RequestHandler[String, Unit] {
   }
 }
 
-object CreateLookupViewFunction extends App {
-  new CreateLookupViewFunction().handleRequest("public", null)
+object AddressLookupCreateViewAndIndexesLambdaFunction extends App {
+  new AddressLookupCreateViewAndIndexesLambdaFunction().handleRequest("public", null)
 }
