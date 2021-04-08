@@ -7,7 +7,7 @@ import java.util.{Map => jMap}
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class DbUserInitialisationFunction extends RequestHandler[jMap[String, String], Unit] {
+class AddressLookupDbInitLambdaFunction extends RequestHandler[jMap[String, String], Unit] {
   override def handleRequest(notUsed: jMap[String, String], contextNotUsed: Context): Unit = {
     Await.result(initialiseDbUsers(Repository.forAdmin()), 5.seconds)
   }
@@ -17,6 +17,6 @@ class DbUserInitialisationFunction extends RequestHandler[jMap[String, String], 
   }
 }
 
-object DbUserInitialisationFunction extends App {
-  new DbUserInitialisationFunction().handleRequest(null, null)
+object AddressLookupDbInitLambdaFunction extends App {
+  new AddressLookupDbInitLambdaFunction().handleRequest(null, null)
 }

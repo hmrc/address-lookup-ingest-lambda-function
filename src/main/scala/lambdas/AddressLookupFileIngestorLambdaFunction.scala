@@ -8,7 +8,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import collection.JavaConverters._
 
-class AddressIngestFunction extends RequestHandler[jMap[String, String], Unit] {
+class AddressLookupFileIngestorLambdaFunction extends RequestHandler[jMap[String, String], Unit] {
   override def handleRequest(batch_info: jMap[String, String], context: Context /*Not used*/): Unit = {
     val batchDir = batch_info.get("batchDir")
     val dbSchemaName = batch_info.get("schemaName")
@@ -20,7 +20,7 @@ class AddressIngestFunction extends RequestHandler[jMap[String, String], Unit] {
   }
 }
 
-object AddressIngestFunction extends App {
+object AddressLookupFileIngestorLambdaFunction extends App {
   val in = Map("batchDir" -> "", "schemaName" -> "public")
-  new AddressIngestFunction().handleRequest(in.asJava, null)
+  new AddressLookupFileIngestorLambdaFunction().handleRequest(in.asJava, null)
 }
