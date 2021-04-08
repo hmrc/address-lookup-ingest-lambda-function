@@ -5,15 +5,18 @@ import lambdas.AddressLookupCreateSchemaLambdaFunction
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.{AnyWordSpec, AsyncWordSpec}
 import repositories.{AdminRepository, IngestRepository, Repository}
-
 import java.io.File
+
+import org.scalatest.Ignore
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
+@Ignore
 class IngestSpec extends AsyncWordSpec with Matchers {
   val timeout = 5.seconds
-  val adminRepository = Repository.forAdmin()
-  val ingestRepository = Repository.forIngest()
+  def adminRepository = Repository.forAdmin()
+  def ingestRepository = Repository.forIngest()
 
   "Ingestion process" should {
     val epoch = "10"
