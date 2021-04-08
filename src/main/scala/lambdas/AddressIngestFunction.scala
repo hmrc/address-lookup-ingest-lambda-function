@@ -17,7 +17,6 @@ class AddressIngestFunction extends RequestHandler[jMap[String, String], Unit] {
 
   private[lambdas] def ingestFiles(repository: IngestRepository, schemaName: String, processDir: String) = {
     repository.ingestFiles(schemaName, processDir)
-    //    repository.ingestFile("public.testing", "<root_dir>/testing_copyin.csv")
   }
 }
 
