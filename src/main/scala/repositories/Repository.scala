@@ -473,32 +473,31 @@ object Repository {
   }
 
   class RdsCredentials() extends Credentials {
-    def credStash = new JCredStash()
 
     val context = Map("role" -> "address_lookup_file_download").asJava
 
-    def host = credStash.getSecret("address_lookup_rds_host", context)
+    def host = new JCredStash().getSecret("address_lookup_rds_host", context)
 
     def database =
-      credStash.getSecret("address_lookup_rds_database", context)
+      new JCredStash().getSecret("address_lookup_rds_database", context)
 
     def admin =
-      credStash.getSecret("address_lookup_rds_admin_user", context)
+      new JCredStash().getSecret("address_lookup_rds_admin_user", context)
 
     def adminPassword =
-      credStash.getSecret("address_lookup_rds_admin_password", context)
+      new JCredStash().getSecret("address_lookup_rds_admin_password", context)
 
     def ingestor =
-      credStash.getSecret("address_lookup_rds_ingest_user", context)
+      new JCredStash().getSecret("address_lookup_rds_ingest_user", context)
 
     def ingestorToken =
       generateAuthToken("eu-west-2", host, "5432", ingestor)
 
     def reader =
-      credStash.getSecret("address_lookup_rds_readonly_user", context)
+      new JCredStash().getSecret("address_lookup_rds_readonly_user", context)
 
     def readerPassword =
-      credStash.getSecret("address_lookup_rds_readonly_password", context)
+      new JCredStash().getSecret("address_lookup_rds_readonly_password", context)
 
   }
 
