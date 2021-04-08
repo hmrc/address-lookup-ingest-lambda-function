@@ -40,19 +40,25 @@ class AdminRepository(transactor: Transactor[IO]) {
 
   import Repository._
 
-  def initialiseUsers(): Future[Unit] = for {
-    _ <- initialiseIngestUser()
-    _ <- initialiseReaderUser()
-  } yield ()
+  def initialiseUsers(): Future[Unit] = {
+    println(s"initialiseUsers()")
+    for {
+      _ <- initialiseIngestUser()
+      _ <- initialiseReaderUser()
+    } yield ()
+  }
 
-  def initialiseSchema(epoch: String): Future[String] = for {
-    _ <- ensureStatusTableExists()
-    schemasToDrop <- getSchemasToDrop()
-    _ <- dropSchemas(schemasToDrop)
-    schemaName <- createSchema(epoch)
-    _ <- createTables(schemaName)
-    _ <- insertNewSchemaStatus(schemaName)
-  } yield schemaName
+  def initialiseSchema(epoch: String): Future[String] = {
+    println(s"initialiseSchema($epoch)")
+    for {
+      _ <- ensureStatusTableExists()
+      schemasToDrop <- getSchemasToDrop()
+      _ <- dropSchemas(schemasToDrop)
+      schemaName <- createSchema(epoch)
+      _ <- createTables(schemaName)
+      _ <- insertNewSchemaStatus(schemaName)
+    } yield schemaName
+  }
 
   private def ensureStatusTableExists() = {
     sql"""CREATE TABLE IF NOT EXISTS public.address_lookup_status (
@@ -113,6 +119,7 @@ class AdminRepository(transactor: Transactor[IO]) {
   }
 
   def listSchemas: Future[List[String]] = {
+    println(s"listSchemas")
     sql"SELECT schema_name FROM information_schema.schemata"
       .query[String]
       .to[List]
@@ -180,6 +187,7 @@ class AdminRepository(transactor: Transactor[IO]) {
   }
 
   def listUsers: Future[List[String]] = {
+    println(s"listUsers")
     sql"SELECT usename AS role_name FROM pg_catalog.pg_user"
       .query[String]
       .to[List]
@@ -208,14 +216,17 @@ class IngestRepository(transactor: Transactor[IO]) {
     "abp_successor" -> "ID30_Successor_Records.csv"
   )
 
-  def ingestFiles(schemaName: String, processDir: String): Future[Int] =
+  def ingestFiles(schemaName: String, processDir: String): Future[Int] = {
+    println(s"ingestFiles($schemaName, $processDir)")
     Future.sequence(
       recordToFileNames.map {
         case (t, f) => ingestFile(s"$schemaName.$t", s"$processDir/$f")
       }
     ).map(_.toList.size)
+  }
 
   def ingestFile(table: String, filePath: String): Future[Long] = {
+    println(s"ingestFile($table, $filePath)")
     val in = Files.newInputStream(new File(filePath).toPath, StandardOpenOption.READ)
     PHC.pgGetCopyAPI(
       PFCM.copyIn(s"""COPY $table FROM STDIN WITH (FORMAT CSV, HEADER, DELIMITER ',');""", in)
@@ -223,6 +234,7 @@ class IngestRepository(transactor: Transactor[IO]) {
   }
 
   def createLookupView(schemaName: String): Future[(Int, Int)] = {
+    println(s"createLookupView($schemaName)")
     val createViewSql =
       Source.fromURL(getClass.getResource("/create_db_lookup_view_and_indexes.sql"))
             .mkString.replaceAll("__schema_name__", schemaName)
@@ -237,6 +249,7 @@ class IngestRepository(transactor: Transactor[IO]) {
   }
 
   def checkIfLookupViewCreated(schemaName: String): Future[Boolean] = {
+    println(s"checkIfLookupViewCreated($schemaName)")
     sql"""SELECT EXISTS(
          |   SELECT 1
          |   FROM pg_matviews
@@ -249,6 +262,7 @@ class IngestRepository(transactor: Transactor[IO]) {
   }
 
   def checkLookupViewStatus(schemaName: String): Future[(String, Option[String])] = {
+    println(s"checkLookupViewStatus($schemaName)")
     sql"""SELECT status, error_message
          | FROM   public.address_lookup_status
          | WHERE  schema_name = $schemaName""".stripMargin
@@ -258,13 +272,16 @@ class IngestRepository(transactor: Transactor[IO]) {
                                               .unsafeToFuture()
   }
 
-  def finaliseSchema(epoch: String, schemaName: String): Future[Boolean] = for {
-    status <- getSchemaStatus(schemaName)
-    ok <- isNewSchemaWithinChangeTolerance(schemaName)
-    proceed = status._1 == "completed" && ok
-    _ <- switchAddressLookupViewToNew(proceed, schemaName)
-    _ =  cleanupOldEpochDirectories(proceed, epoch)
-  } yield ok
+  def finaliseSchema(epoch: String, schemaName: String): Future[Boolean] = {
+    println(s"finaliseSchema($epoch, $schemaName)")
+    for {
+      status <- getSchemaStatus(schemaName)
+      ok <- isNewSchemaWithinChangeTolerance(schemaName)
+      proceed = status._1 == "completed" && ok
+      _ <- switchAddressLookupViewToNew(proceed, schemaName)
+      _ =  cleanupOldEpochDirectories(proceed, epoch)
+    } yield ok
+  }
 
   private def switchAddressLookupViewToNew(proceed: Boolean, schemaName: String): Future[Int] = {
     if (!proceed) Future.successful(0)
@@ -431,7 +448,7 @@ object Repository {
 
   object Credentials {
     def apply(): Credentials = {
-      new LocalCredentials()
+      new RdsCredentials()
     }
   }
 
