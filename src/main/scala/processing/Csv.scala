@@ -1,12 +1,16 @@
 package processing
 
+import org.slf4j.LoggerFactory
+
 import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileReader, PrintWriter}
 import java.nio.file.{Files, Paths}
 import java.util.zip.ZipInputStream
 
 class Csv(private val root: String) {
+  private val logger = LoggerFactory.getLogger(classOf[Csv])
+
   def process(): Unit = {
-    println(s"Csv.process($root)")
+    logger.info(s"Process CSV files in $root")
     val typeToWriterMap: Map[String, PrintWriter] =
       Csv.fileNameToHeadingsMap
         .map { case (rid, m) =>

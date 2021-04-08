@@ -1,3 +1,4 @@
+-- DOES THIS EVEN GET USED???
 CREATE INDEX abp_blpu_uprn_index ON __schema__.abp_blpu (uprn);
 CREATE INDEX abp_delivery_point_urpn_index ON __schema__.abp_delivery_point(uprn);
 CREATE INDEX abp_delivery_point_postcode_index ON __schema__.abp_delivery_point(postcode);
