@@ -41,7 +41,7 @@ class Csv(private val root: String) {
   private def unpackZipFile(f: File) = {
     val zin = new ZipInputStream(new FileInputStream(f))
     Stream.continually(zin.getNextEntry).takeWhile(_ != null).map { file =>
-      val foutf = File.createTempFile(f.getName, "")
+      val foutf = new File(new File(root), file.getName)
       val fout = new FileOutputStream(foutf)
       val buffer = new Array[Byte](1024)
       Stream

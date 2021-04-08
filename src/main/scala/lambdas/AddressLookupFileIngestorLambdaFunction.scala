@@ -19,8 +19,3 @@ class AddressLookupFileIngestorLambdaFunction extends RequestHandler[jMap[String
     repository.ingestFiles(schemaName, processDir)
   }
 }
-
-object AddressLookupFileIngestorLambdaFunction extends App {
-  val in = Map("batchDir" -> "", "schemaName" -> "public")
-  new AddressLookupFileIngestorLambdaFunction().handleRequest(in.asJava, null)
-}
