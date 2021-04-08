@@ -16,7 +16,3 @@ class AddressLookupCreateSchemaLambdaFunction extends RequestHandler[String, Str
     repository.initialiseSchema(epoch)
   }
 }
-
-object AddressLookupCreateSchemaLambdaFunction extends App {
-  new AddressLookupCreateSchemaLambdaFunction().handleRequest(args(0), null)
-}

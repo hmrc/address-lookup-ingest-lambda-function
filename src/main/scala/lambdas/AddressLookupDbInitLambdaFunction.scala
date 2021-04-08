@@ -16,7 +16,3 @@ class AddressLookupDbInitLambdaFunction extends RequestHandler[jMap[String, Obje
     repository.initialiseUsers()
   }
 }
-
-object AddressLookupDbInitLambdaFunction extends App {
-  new AddressLookupDbInitLambdaFunction().handleRequest(null, null)
-}

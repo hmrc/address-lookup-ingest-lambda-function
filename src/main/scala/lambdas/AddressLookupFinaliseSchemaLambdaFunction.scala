@@ -21,7 +21,3 @@ class AddressLookupFinaliseSchemaLambdaFunction extends RequestHandler[jMap[Stri
     repository.finaliseSchema(epoch, schemaName)
   }
 }
-
-object AddressLookupFinaliseSchemaLambdaFunction extends App {
-  new AddressLookupFinaliseSchemaLambdaFunction().handleRequest(null, null)
-}

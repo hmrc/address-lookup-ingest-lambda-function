@@ -21,7 +21,3 @@ class AddressLookupCheckStatusLambdaFunction extends RequestHandler[String, jMap
       }
   }
 }
-
-object AddressLookupCheckStatusLambdaFunction extends App {
-  new AddressLookupCheckStatusLambdaFunction().handleRequest(null, null)
-}

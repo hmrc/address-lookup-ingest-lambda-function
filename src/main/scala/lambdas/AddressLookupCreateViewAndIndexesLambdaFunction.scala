@@ -16,7 +16,3 @@ class AddressLookupCreateViewAndIndexesLambdaFunction extends RequestHandler[Str
     repository.createLookupView(schemaName)
   }
 }
-
-object AddressLookupCreateViewAndIndexesLambdaFunction extends App {
-  new AddressLookupCreateViewAndIndexesLambdaFunction().handleRequest("public", null)
-}
