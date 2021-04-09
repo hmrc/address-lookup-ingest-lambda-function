@@ -11,8 +11,11 @@ val doobieVersion = "0.7.1"
 
 ThisBuild / libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-lambda-java-core" % "1.1.0",
+  "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.915",
+  "com.amazonaws" % "aws-java-sdk-kms" % "1.11.915",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.55",
   "com.amazonaws" % "aws-java-sdk-rds" % "1.11.915",
-  "co.wrisk.jcredstash" % "jcredstash" % "0.0.3",
+//  "co.wrisk.jcredstash" % "jcredstash" % "0.0.3",
   "com.lihaoyi" %% "os-lib" % "0.7.1",
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,

@@ -9,7 +9,7 @@ import scala.concurrent.duration.DurationInt
 
 class AddressLookupDbInitLambdaFunction extends RequestHandler[jMap[String, Object], Unit] {
   override def handleRequest(notUsed: jMap[String, Object], contextNotUsed: Context): Unit = {
-    Await.result(initialiseDbUsers(Repository.forAdmin()), 5.seconds)
+    Await.result(initialiseDbUsers(Repository().forAdmin), 5.seconds)
   }
 
   private[lambdas] def initialiseDbUsers(repository: AdminRepository) = {

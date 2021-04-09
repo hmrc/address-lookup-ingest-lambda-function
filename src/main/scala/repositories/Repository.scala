@@ -13,12 +13,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.JavaConverters._
 
 object Repository {
-  def forAdmin(): AdminRepository = new AdminRepository(adminTransactor)
-  def forIngest(): IngestRepository = new IngestRepository(ingestorTransactor)
-  private def creds: Credentials = Credentials()
+  case class Repositories(forAdmin: AdminRepository, forIngest: IngestRepository)
 
-  def adminTransactor: Transactor[IO] = adminXa(creds)
-  def ingestorTransactor: Transactor[IO] = ingestorXa(creds)
+  def apply(): Repositories = repositories(Credentials())
+  def forTesting(): Repositories =
+    repositories(Credentials.forTesting())
+
+  private def repositories(credentials: Credentials): Repositories = {
+    val adminTransactor: Transactor[IO] = adminXa(credentials)
+    val ingestorTransactor: Transactor[IO] = ingestorXa(credentials)
+
+    Repositories(
+      forAdmin = new AdminRepository(adminTransactor, credentials),
+      forIngest = new IngestRepository(ingestorTransactor, credentials)
+    )
+  }
+
 
   private def adminXa(creds: Credentials): Transactor[IO] = {
     implicit val cs: ContextShift[IO] =
@@ -84,32 +94,40 @@ object Repository {
     def reader: String
 
     def readerPassword: String
+
+    def csvBaseDir: String
   }
 
   object Credentials {
     def apply(): Credentials = {
       new RdsCredentials()
     }
+
+    def forTesting(): Credentials = {
+      new LocalCredentials()
+    }
   }
 
   class LocalCredentials() extends Credentials {
-    def host = "localhost"
+    override def host: String = "localhost"
 
-    def port = "5433"
+    override def port: String = "5433"
 
-    def database: String = "addressbasepremium"
+    override def database: String = "addressbasepremium"
 
-    def admin = "root"
+    override def admin: String = "root"
 
-    def adminPassword = "password"
+    override def adminPassword: String = "password"
 
-    def ingestor = admin
+    override def ingestor: String = admin
 
-    def ingestorToken = adminPassword
+    override def ingestorToken: String = adminPassword
 
-    def reader = admin
+    override def reader: String = admin
 
-    def readerPassword = adminPassword
+    override def readerPassword: String = adminPassword
+
+    override def csvBaseDir: String = "src/test/resources/csv"
   }
 
   class RdsCredentials() extends Credentials {
@@ -124,33 +142,34 @@ object Repository {
       credStash.getSecret(credential, context)
     }
 
-    def host: String = {
+    override def host: String = {
       retrieveCredentials("address_lookup_rds_host")
     }
 
-    def port: String = "5432"
+    override def port: String = "5432"
 
-    def database: String =
+    override def database: String =
       retrieveCredentials("address_lookup_rds_database")
 
-    def admin: String =
+    override def admin: String =
       retrieveCredentials("address_lookup_rds_admin_user")
 
-    def adminPassword: String =
+    override def adminPassword: String =
       retrieveCredentials("address_lookup_rds_admin_password")
 
-    def ingestor: String =
+    override def ingestor: String =
       retrieveCredentials("address_lookup_rds_ingest_user")
 
-    def ingestorToken: String =
+    override def ingestorToken: String =
       generateAuthToken("eu-west-2", host, "5432", ingestor)
 
-    def reader: String =
+    override def reader: String =
       retrieveCredentials("address_lookup_rds_readonly_user")
 
-    def readerPassword: String =
+    override def readerPassword: String =
       retrieveCredentials("address_lookup_rds_readonly_password")
 
+    override def csvBaseDir: String = "/mnt/efs/"
   }
 
 }

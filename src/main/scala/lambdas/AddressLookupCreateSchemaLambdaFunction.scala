@@ -9,7 +9,7 @@ import scala.concurrent.duration.DurationInt
 
 class AddressLookupCreateSchemaLambdaFunction extends RequestHandler[String, String] {
   override def handleRequest(epoch: String, contextNotUsed: Context): String = {
-    Await.result(initialiseDbSchema(Repository.forAdmin(), epoch), 5.seconds)
+    Await.result(initialiseDbSchema(Repository().forAdmin, epoch), 5.seconds)
   }
 
   private[lambdas] def initialiseDbSchema(repository: AdminRepository, epoch: String) = {

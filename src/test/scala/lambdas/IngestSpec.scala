@@ -15,8 +15,10 @@ import scala.concurrent.duration._
 @Ignore
 class IngestSpec extends AsyncWordSpec with Matchers {
   val timeout = 5.seconds
-  def adminRepository = Repository.forAdmin()
-  def ingestRepository = Repository.forIngest()
+  private val repositories: Repository.Repositories = Repository.forTesting()
+
+  def adminRepository = repositories.forAdmin
+  def ingestRepository = repositories.forIngest
 
   "Ingestion process" should {
     val epoch = "10"

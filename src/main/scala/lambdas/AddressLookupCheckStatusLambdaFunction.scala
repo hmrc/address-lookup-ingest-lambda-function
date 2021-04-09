@@ -11,7 +11,7 @@ import scala.collection.JavaConverters._
 
 class AddressLookupCheckStatusLambdaFunction extends RequestHandler[String, jMap[String, String]] {
   override def handleRequest(schemaName: String, contextNotUsed: Context): jMap[String, String] = {
-    Await.result(checkLookupViewStatus(Repository.forIngest(), schemaName), 5.seconds).asJava
+    Await.result(checkLookupViewStatus(Repository().forIngest, schemaName), 5.seconds).asJava
   }
 
   private[lambdas] def checkLookupViewStatus(repository: IngestRepository, schemaName: String): Future[Map[String, String]] = {

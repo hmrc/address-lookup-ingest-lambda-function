@@ -24,6 +24,7 @@ import doobie._
 import doobie.implicits._
 import doobie.postgres._
 import doobie.postgres.implicits._
+import repositories.Repository.Credentials
 
 import java.io.File
 import java.nio.file.{Files, StandardOpenOption}
@@ -35,9 +36,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
-class AdminRepository(transactor: => Transactor[IO]) {
+class AdminRepository(transactor: => Transactor[IO], private val credentials: Credentials) {
 
   import Repository._
+
+  private val rootDir = credentials.csvBaseDir // not_used_currently
 
   def initialiseUsers(): Future[Unit] = {
     println(s"initialiseUsers()")
@@ -142,8 +145,8 @@ class AdminRepository(transactor: => Transactor[IO]) {
   }
 
   private def initialiseIngestUser() = {
-    val ingestorUser = Credentials().ingestor
-    val database = Credentials().database
+    val ingestorUser = credentials.ingestor
+    val database = credentials.database
     sql"SELECT usename FROM pg_user WHERE usename = $ingestorUser"
       .query[String]
       .option
@@ -165,9 +168,9 @@ class AdminRepository(transactor: => Transactor[IO]) {
   }
 
   private def initialiseReaderUser() = {
-    val readerUser = Credentials().reader
-    val readerPassword = Credentials().readerPassword
-    val database = Credentials().database
+    val readerUser = credentials.reader
+    val readerPassword = credentials.readerPassword
+    val database = credentials.database
     sql"SELECT usename FROM pg_user WHERE usename = $readerUser"
       .query[String]
       .option

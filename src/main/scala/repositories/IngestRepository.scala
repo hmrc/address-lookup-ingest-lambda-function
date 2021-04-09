@@ -8,6 +8,7 @@ import doobie._
 import doobie.implicits._
 import doobie.postgres._
 import doobie.postgres.implicits._
+import repositories.Repository.Credentials
 
 import java.io.File
 import java.nio.file.{Files, StandardOpenOption}
@@ -20,11 +21,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
 
-class IngestRepository(transactor: => Transactor[IO]) {
+class IngestRepository(transactor: => Transactor[IO], private val credentials: Credentials) {
 
   import Repository._
 
-  val rootDir = "/mnt/efs/"
+  private val rootDir: String = {
+    if(new File(credentials.csvBaseDir).isAbsolute) credentials.csvBaseDir
+    else os.pwd.toString + "/" + credentials.csvBaseDir
+  }
 
   // Does this belong here???
   val recordToFileNames = Map(
@@ -123,7 +127,7 @@ class IngestRepository(transactor: => Transactor[IO]) {
   private def cleanupOldEpochDirectories(proceed: Boolean, epoch: String): Unit = {
     os.walk(
       path = os.Path(rootDir),
-      skip = _.baseName == epoch,
+      skip = p => p.baseName == epoch || p.ext == "zip",
       maxDepth = 1
     ).foreach(os.remove.all)
   }
@@ -144,7 +148,7 @@ class IngestRepository(transactor: => Transactor[IO]) {
         for {
           latestCount <- getCount(latestSchemaName)
           previousCount <- getCount(previousSchemaName)
-          percentageChange = ((latestCount - previousCount) / previousCount) * 100.0
+          percentageChange = if(previousCount == 0) 0 else ((latestCount - previousCount) / previousCount) * 100.0
           withinTolerance = 0.3 >= percentageChange && percentageChange >= 0
         } yield withinTolerance
 

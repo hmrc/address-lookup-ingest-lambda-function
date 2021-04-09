@@ -12,7 +12,7 @@ class AddressLookupFileIngestorLambdaFunction extends RequestHandler[jMap[String
   override def handleRequest(batch_info: jMap[String, Object], context: Context /*Not used*/): Unit = {
     val batchDir = batch_info.get("batchDir").asInstanceOf[String]
     val dbSchemaName = batch_info.get("schemaName").asInstanceOf[String]
-    Await.result(ingestFiles(Repository.forIngest(), dbSchemaName, batchDir), 15.minutes)
+    Await.result(ingestFiles(Repository().forIngest, dbSchemaName, batchDir), 15.minutes)
   }
 
   private[lambdas] def ingestFiles(repository: IngestRepository, schemaName: String, processDir: String) = {
