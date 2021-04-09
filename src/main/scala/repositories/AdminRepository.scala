@@ -19,7 +19,6 @@ package repositories
 import cats.effect.{ContextShift, IO}
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.rds.auth.{GetIamAuthTokenRequest, RdsIamAuthTokenGenerator}
-import com.jessecoyle.JCredStash
 import doobie._
 import doobie.implicits._
 import doobie.postgres._

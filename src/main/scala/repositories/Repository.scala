@@ -3,13 +3,12 @@ package repositories
 import cats.effect.{ContextShift, IO}
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.rds.auth.{GetIamAuthTokenRequest, RdsIamAuthTokenGenerator}
-import com.jessecoyle.JCredStash
 import doobie.Transactor
+import me.lamouri.JCredStash
 
 import java.util
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.collection.JavaConverters._
 
 object Repository {
@@ -131,15 +130,13 @@ object Repository {
   }
 
   class RdsCredentials() extends Credentials {
-
-    val context: util.Map[String, String] =
+    private val credstashTableName = "credential-store"
+    private val context: util.Map[String, String] =
       Map("role" -> "address_lookup_file_download").asJava
 
     private def retrieveCredentials(credential: String) = {
-      println(s">>> retrieveCredentials($credential)")
       val credStash = new JCredStash()
-      println(s">>> JCredstash: ${credStash.listSecrets()}")
-      credStash.getSecret(credential, context)
+      credStash.getSecret(credstashTableName, credential, context)
     }
 
     override def host: String = {
