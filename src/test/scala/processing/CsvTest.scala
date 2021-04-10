@@ -3,12 +3,10 @@ package processing
 import org.scalatest.Ignore
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import shapeless.Succ
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 import scala.io.Source
-import scala.util.{Failure, Success, Try}
 
 @Ignore
 class CsvTest extends AnyWordSpec with Matchers {

@@ -1,15 +1,11 @@
 package lambdas
 
-import doobie.implicits._
-import lambdas.AddressLookupCreateSchemaLambdaFunction
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.{AnyWordSpec, AsyncWordSpec}
-import repositories.{AdminRepository, IngestRepository, Repository}
-import java.io.File
-
 import org.scalatest.Ignore
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AsyncWordSpec
+import repositories.Repository
 
-import scala.concurrent.Await
+import java.io.File
 import scala.concurrent.duration._
 
 @Ignore
@@ -58,7 +54,7 @@ class IngestSpec extends AsyncWordSpec with Matchers {
     }
 
     "create lookup view" when {
-      "createLookupView is executed - the data is probably not correct here as there are no rows - TODO" in {
+      "createLookupView is executed" in {
         for {
           _ <- new AddressLookupCreateViewAndIndexesLambdaFunction().createLookupView(ingestRepository, schemaName)
           created <- ingestRepository.checkIfLookupViewCreated(schemaName)

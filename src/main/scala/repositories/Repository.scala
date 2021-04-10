@@ -75,25 +75,16 @@ object Repository {
     authToken
   }
 
-  trait Credentials {
+  sealed trait Credentials {
     def host: String
-
     def port: String
-
     def database: String
-
     def admin: String
-
     def adminPassword: String
-
     def ingestor: String
-
     def ingestorToken: String
-
     def reader: String
-
     def readerPassword: String
-
     def csvBaseDir: String
   }
 
@@ -107,29 +98,20 @@ object Repository {
     }
   }
 
-  class LocalCredentials() extends Credentials {
+  final class LocalCredentials() extends Credentials {
     override def host: String = "localhost"
-
     override def port: String = "5433"
-
     override def database: String = "addressbasepremium"
-
     override def admin: String = "root"
-
     override def adminPassword: String = "password"
-
     override def ingestor: String = admin
-
     override def ingestorToken: String = adminPassword
-
     override def reader: String = admin
-
     override def readerPassword: String = adminPassword
-
     override def csvBaseDir: String = "src/test/resources/csv"
   }
 
-  class RdsCredentials() extends Credentials {
+  final class RdsCredentials() extends Credentials {
     private val credstashTableName = "credential-store"
     private val context: util.Map[String, String] =
       Map("role" -> "address_lookup_file_download").asJava
@@ -139,33 +121,15 @@ object Repository {
       credStash.getSecret(credstashTableName, credential, context)
     }
 
-    override def host: String = {
-      retrieveCredentials("address_lookup_rds_host")
-    }
-
+    override def host: String = retrieveCredentials("address_lookup_rds_host")
     override def port: String = "5432"
-
-    override def database: String =
-      retrieveCredentials("address_lookup_rds_database")
-
-    override def admin: String =
-      retrieveCredentials("address_lookup_rds_admin_user")
-
-    override def adminPassword: String =
-      retrieveCredentials("address_lookup_rds_admin_password")
-
-    override def ingestor: String =
-      retrieveCredentials("address_lookup_rds_ingest_user")
-
-    override def ingestorToken: String =
-      generateAuthToken("eu-west-2", host, "5432", ingestor)
-
-    override def reader: String =
-      retrieveCredentials("address_lookup_rds_readonly_user")
-
-    override def readerPassword: String =
-      retrieveCredentials("address_lookup_rds_readonly_password")
-
+    override def database: String = retrieveCredentials("address_lookup_rds_database")
+    override def admin: String = retrieveCredentials("address_lookup_rds_admin_user")
+    override def adminPassword: String = retrieveCredentials("address_lookup_rds_admin_password")
+    override def ingestor: String = retrieveCredentials("address_lookup_rds_ingest_user")
+    override def ingestorToken: String = generateAuthToken("eu-west-2", host, "5432", ingestor)
+    override def reader: String = retrieveCredentials("address_lookup_rds_readonly_user")
+    override def readerPassword: String = retrieveCredentials("address_lookup_rds_readonly_password")
     override def csvBaseDir: String = "/mnt/efs/"
   }
 

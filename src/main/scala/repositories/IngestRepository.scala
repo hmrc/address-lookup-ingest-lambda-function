@@ -1,28 +1,21 @@
 package repositories
 
-import cats.effect.{ContextShift, IO}
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
-import com.amazonaws.services.rds.auth.{GetIamAuthTokenRequest, RdsIamAuthTokenGenerator}
+import cats.effect.IO
 import doobie._
 import doobie.implicits._
 import doobie.postgres._
-import doobie.postgres.implicits._
+import org.slf4j.LoggerFactory
 import repositories.Repository.Credentials
 
 import java.io.File
 import java.nio.file.{Files, StandardOpenOption}
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId}
-import java.util
-import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.io.Source
 
 
 class IngestRepository(transactor: => Transactor[IO], private val credentials: Credentials) {
-
-  import Repository._
+  private val logger = LoggerFactory.getLogger(classOf[IngestRepository])
 
   private val rootDir: String = {
     if(new File(credentials.csvBaseDir).isAbsolute) credentials.csvBaseDir
@@ -43,7 +36,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   )
 
   def ingestFiles(schemaName: String, processDir: String): Future[Int] = {
-    println(s"ingestFiles($schemaName, $processDir)")
+    logger.info(s"Ingesting files in $processDir for schema $schemaName")
     Future.sequence(
       recordToFileNames.map {
         case (t, f) => ingestFile(s"$schemaName.$t", s"$processDir/$f")
@@ -52,7 +45,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   }
 
   def ingestFile(table: String, filePath: String): Future[Long] = {
-    println(s"ingestFile($table, $filePath)")
+    logger.info(s"Ingest file $filePath into table $table")
     val in = Files.newInputStream(new File(filePath).toPath, StandardOpenOption.READ)
     PHC.pgGetCopyAPI(
       PFCM.copyIn(s"""COPY $table FROM STDIN WITH (FORMAT CSV, HEADER, DELIMITER ',');""", in)
@@ -60,7 +53,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   }
 
   def createLookupView(schemaName: String): Future[(Int, Int)] = {
-    println(s"createLookupView($schemaName)")
+    logger.info(s"Creating lookup view in schema $schemaName")
     val createViewSql =
       Source.fromURL(getClass.getResource("/create_db_lookup_view_and_indexes.sql"))
             .mkString.replaceAll("__schema_name__", schemaName)
@@ -75,7 +68,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   }
 
   def checkIfLookupViewCreated(schemaName: String): Future[Boolean] = {
-    println(s"checkIfLookupViewCreated($schemaName)")
+    logger.info(s"Checking if lookup view has been created in schema $schemaName")
     sql"""SELECT EXISTS(
          |   SELECT 1
          |   FROM pg_matviews
@@ -88,7 +81,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   }
 
   def checkLookupViewStatus(schemaName: String): Future[(String, Option[String])] = {
-    println(s"checkLookupViewStatus($schemaName)")
+    logger.info(s"Checking status of schema $schemaName")
     sql"""SELECT status, error_message
          | FROM   public.address_lookup_status
          | WHERE  schema_name = $schemaName""".stripMargin
@@ -99,7 +92,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   }
 
   def finaliseSchema(epoch: String, schemaName: String): Future[Boolean] = {
-    println(s"finaliseSchema($epoch, $schemaName)")
+    logger.info(s"Finalising schema $schemaName for epoch $epoch")
     for {
       status <- getSchemaStatus(schemaName)
       ok <- isNewSchemaWithinChangeTolerance(schemaName)

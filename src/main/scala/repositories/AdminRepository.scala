@@ -16,33 +16,25 @@ package repositories
  * limitations under the License.
  */
 
-import cats.effect.{ContextShift, IO}
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
-import com.amazonaws.services.rds.auth.{GetIamAuthTokenRequest, RdsIamAuthTokenGenerator}
+import cats.effect.IO
 import doobie._
 import doobie.implicits._
-import doobie.postgres._
-import doobie.postgres.implicits._
+import org.slf4j.LoggerFactory
 import repositories.Repository.Credentials
 
-import java.io.File
-import java.nio.file.{Files, StandardOpenOption}
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId}
-import java.util
-import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.io.Source
 
 class AdminRepository(transactor: => Transactor[IO], private val credentials: Credentials) {
-
-  import Repository._
+  private val logger = LoggerFactory.getLogger(classOf[AdminRepository])
 
   private val rootDir = credentials.csvBaseDir // not_used_currently
 
   def initialiseUsers(): Future[Unit] = {
-    println(s"initialiseUsers()")
+    logger.info(s"initialiseUsers()")
     for {
       _ <- initialiseIngestUser()
       _ <- initialiseReaderUser()
@@ -50,7 +42,7 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
   }
 
   def initialiseSchema(epoch: String): Future[String] = {
-    println(s"initialiseSchema($epoch)")
+    logger.info(s"initialiseSchema($epoch)")
     for {
       _ <- ensureStatusTableExists()
       schemasToDrop <- getSchemasToDrop()
@@ -120,7 +112,7 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
   }
 
   def listSchemas: Future[List[String]] = {
-    println(s"listSchemas")
+    logger.info(s"listSchemas")
     sql"SELECT schema_name FROM information_schema.schemata"
       .query[String]
       .to[List]
@@ -130,7 +122,7 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
 
   private def createTables(schemaName: String): Future[Int] = {
     val createSchemaSql =
-      Source.fromResource("create_db_schema.sql").mkString.replaceAll("__schema__", schemaName)
+      Source.fromURL(getClass.getResource("/create_db_schema.sql"), "utf-8").mkString.replaceAll("__schema__", schemaName)
     Fragment.const(createSchemaSql).update.run.transact(transactor).unsafeToFuture()
   }
 
@@ -162,7 +154,8 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
                    .transact(transactor)
                    .unsafeToFuture()
         case Some(_) =>
-          Future.successful(println(s"'ingestor' user already exists"))
+          logger.info(s"'ingestor' user already exists")
+          Future.successful(0)
       }
   }
 
@@ -183,12 +176,12 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
                                                                       .transact(transactor)
                                                                       .unsafeToFuture()
         case Some(_) =>
-          Future.successful(println(s"'reader' user already exists"))
+          logger.info(s"'reader' user already exists")
+          Future.successful(0)
       }
   }
 
   def listUsers: Future[List[String]] = {
-    println(s"listUsers")
     sql"SELECT usename AS role_name FROM pg_catalog.pg_user"
       .query[String]
       .to[List]
