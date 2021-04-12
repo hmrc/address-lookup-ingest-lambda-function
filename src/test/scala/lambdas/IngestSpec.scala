@@ -11,7 +11,7 @@ import java.nio.file.Paths
 import scala.concurrent.duration._
 import scala.io.Source
 
-//@Ignore
+@Ignore
 class IngestSpec extends AsyncWordSpec with Matchers {
   private val timeout = 5.seconds
 
@@ -50,8 +50,8 @@ class IngestSpec extends AsyncWordSpec with Matchers {
     "create schema" when {
       "initialiseDbSchema is executed" in {
         (for {
-          schemaName <- new AddressLookupCreateSchemaLambdaFunction().initialiseDbSchema(adminRepository, epoch)
-          schemas <- adminRepository.listSchemas
+          schemaName <- new AddressLookupCreateSchemaLambdaFunction().initialiseDbSchema(ingestRepository, epoch)
+          schemas <- ingestRepository.listSchemas
         } yield (schemaName, schemas))
           .map {
             case (schema, schemas) =>

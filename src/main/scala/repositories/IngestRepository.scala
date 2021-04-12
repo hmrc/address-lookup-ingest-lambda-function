@@ -9,6 +9,8 @@ import repositories.Repository.Credentials
 
 import java.io.File
 import java.nio.file.{Files, StandardOpenOption}
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, ZoneId}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.io.Source
@@ -50,6 +52,100 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
     PHC.pgGetCopyAPI(
       PFCM.copyIn(s"""COPY $table FROM STDIN WITH (FORMAT CSV, HEADER, DELIMITER ',');""", in)
     ).transact(transactor).unsafeToFuture()
+  }
+
+  def initialiseSchema(epoch: String): Future[String] = {
+    logger.info(s"initialiseSchema($epoch)")
+    for {
+      _ <- ensureStatusTableExists()
+      schemasToDrop <- getSchemasToDrop()
+      _ <- dropSchemas(schemasToDrop)
+      schemaName <- createSchema(epoch)
+      _ <- createTables(schemaName)
+      _ <- insertNewSchemaStatus(schemaName)
+    } yield schemaName
+  }
+
+  private def ensureStatusTableExists() = {
+    sql"""CREATE TABLE IF NOT EXISTS public.address_lookup_status (
+         |    schema_name VARCHAR(64) NOT NULL PRIMARY KEY,
+         |    status      VARCHAR(32) NOT NULL,
+         |    error_message VARCHAR NULL,
+         |    timestamp   TIMESTAMP NOT NULL);""".stripMargin
+                                                 .update.run
+                                                 .transact(transactor)
+                                                 .unsafeToFuture()
+  }
+
+  private def getSchemasToDrop() = {
+    sql"""SELECT schema_name
+         |FROM public.address_lookup_status
+         |WHERE schema_name NOT IN (
+         |    SELECT schema_name
+         |    FROM public.address_lookup_status
+         |    WHERE status = 'finalised'
+         |    ORDER BY timestamp DESC
+         |    LIMIT 1);""".stripMargin
+                          .query[String]
+                          .to[List]
+                          .transact(transactor)
+                          .unsafeToFuture()
+  }
+
+  private def dropSchemas(schemas: List[String]) = {
+    Future.sequence(
+      schemas
+        .map(schema =>
+          Fragment.const(
+            s"""DROP SCHEMA IF EXISTS $schema CASCADE;
+               | DELETE FROM public.address_lookup_status
+               | WHERE schema_name = '$schema';""".stripMargin)
+        )
+        .map { ssql =>
+          ssql.update.run.transact(transactor).unsafeToFuture()
+        }
+    )
+  }
+
+  private val timestampFormat = DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")
+
+  private def schemaNameFor(epoch: String) = {
+    val timestamp = LocalDateTime.now(ZoneId.of("UTC"))
+    s"ab${epoch}_${timestampFormat.format(timestamp)}"
+  }
+
+  private def createSchema(epoch: String) = {
+    val schemaName = schemaNameFor(epoch)
+    Fragment.const(s"CREATE SCHEMA IF NOT EXISTS $schemaName")
+            .update
+            .run
+            .transact(transactor)
+            .unsafeToFuture()
+            .map(_ => schemaName)
+  }
+
+  def listSchemas: Future[List[String]] = {
+    logger.info(s"listSchemas")
+    sql"SELECT schema_name FROM information_schema.schemata"
+      .query[String]
+      .to[List]
+      .transact(transactor)
+      .unsafeToFuture()
+  }
+
+  private def createTables(schemaName: String): Future[Int] = {
+    val createSchemaSql =
+      Source.fromURL(getClass.getResource("/create_db_schema.sql"), "utf-8").mkString.replaceAll("__schema__", schemaName)
+    Fragment.const(createSchemaSql).update.run.transact(transactor).unsafeToFuture()
+  }
+
+  private def insertNewSchemaStatus(schemaName: String): Future[Int] = {
+    sql"""INSERT INTO public.address_lookup_status(schema_name, status, timestamp)
+         | VALUES($schemaName, 'schema_created', NOW())""".stripMargin
+                                                          .update
+                                                          .run
+                                                          .transact(transactor)
+                                                          .unsafeToFuture()
   }
 
   def createLookupView(schemaName: String): Future[(Int, Int)] = {
