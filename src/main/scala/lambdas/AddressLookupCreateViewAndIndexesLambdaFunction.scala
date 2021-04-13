@@ -11,8 +11,11 @@ class AddressLookupCreateViewAndIndexesLambdaFunction extends RequestHandler[Str
   private val logger = LoggerFactory.getLogger(classOf[AddressLookupFinaliseSchemaLambdaFunction])
 
   override def handleRequest(schemaName: String, contextNotUsed: Context): Unit = {
-    Await.result(createLookupView(Repository().forIngest, schemaName), 10.seconds)
-    Thread.sleep(5000)
+    try {
+      Await.ready(createLookupView(Repository().forIngest, schemaName), 10.seconds)
+    } catch {
+      case _: Throwable =>
+    }
   }
 
   private[lambdas] def createLookupView(repository: IngestRepository, schemaName: String): Future[(Int, Int)] = {
