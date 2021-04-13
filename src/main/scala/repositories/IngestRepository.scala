@@ -195,6 +195,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
       proceed = status._1 == "completed" && ok
       _ <- switchAddressLookupViewToNew(proceed, schemaName)
       _ =  cleanupOldEpochDirectories(proceed, epoch)
+//      _ =  cleanupProcessedCsvs(proceed, epoch)
     } yield ok
   }
 
@@ -213,11 +214,27 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   }
 
   private def cleanupOldEpochDirectories(proceed: Boolean, epoch: String): Unit = {
-    os.walk(
-      path = os.Path(rootDir),
-      skip = p => p.baseName == epoch,
-      maxDepth = 1
-    ).filter(_.toIO.isDirectory).foreach(os.remove.all)
+    if(proceed) {
+      os.walk(
+        path = os.Path(rootDir),
+        skip = p => p.baseName == epoch,
+        maxDepth = 1
+      ).filter(_.toIO.isDirectory).foreach(os.remove.all)
+    }
+  }
+
+  private def cleanupProcessedCsvs(proceed: Boolean, epoch: String): Unit = {
+    if(proceed) {
+      val epochDir = os.Path(rootDir) / epoch
+      os.walk(
+        path = epochDir,
+        skip = p => {
+          val pn = p.toIO.getName
+          pn.endsWith(".csv") || pn == "processed.done"
+        },
+        maxDepth = 1
+      )
+    }
   }
 
   private def getSchemaStatus(schemaName: String): Future[(String, Option[String])] = {
