@@ -11,7 +11,7 @@ class AddressLookupCreateSchemaLambdaFunction extends RequestHandler[String, Str
   private val logger = LoggerFactory.getLogger(classOf[AddressLookupCreateSchemaLambdaFunction])
 
   override def handleRequest(epoch: String, contextNotUsed: Context): String = {
-    Await.result(initialiseDbSchema(Repository().forIngest, epoch), 5.seconds)
+    Await.result(initialiseDbSchema(Repository().forIngest, epoch), 50.seconds)
   }
 
   private[lambdas] def initialiseDbSchema(repository: IngestRepository, epoch: String): Future[String] = {

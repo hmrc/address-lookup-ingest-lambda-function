@@ -15,7 +15,7 @@ class AddressLookupFinaliseSchemaLambdaFunction extends RequestHandler[jMap[Stri
     val epoch = epochData.get("epoch").asInstanceOf[String]
     val schemaName = epochData.get("schemaName").asInstanceOf[String]
 
-    Await.result(finaliseSchema(Repository().forIngest, epoch, schemaName), 5.seconds)
+    Await.result(finaliseSchema(Repository().forIngest, epoch, schemaName), 50.seconds)
   }
 
   private[lambdas] def finaliseSchema(repository: IngestRepository, epoch: String, schemaName: String): Future[Boolean] = {

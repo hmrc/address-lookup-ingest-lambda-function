@@ -31,7 +31,7 @@ class Csv(private val root: String) {
       .flatMap(unpackZipFile)
       .foreach(f => processFile(typeToWriterMap)(f))
 
-    typeToWriterMap.foreach{case (_, out) => out.flush; out.close}
+    typeToWriterMap.foreach{case (_, out) => out.flush(); out.close()}
   }
 
   private def createWriterAndAddHeader(name: String, headers: Seq[String]) = {
