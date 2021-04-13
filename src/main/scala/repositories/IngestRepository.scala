@@ -215,9 +215,9 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   private def cleanupOldEpochDirectories(proceed: Boolean, epoch: String): Unit = {
     os.walk(
       path = os.Path(rootDir),
-      skip = p => p.baseName == epoch || p.ext == "zip",
+      skip = p => p.baseName == epoch,
       maxDepth = 1
-    ).foreach(os.remove.all)
+    ).filter(_.toIO.isDirectory).foreach(os.remove.all)
   }
 
   private def getSchemaStatus(schemaName: String): Future[(String, Option[String])] = {
