@@ -14,7 +14,7 @@ class AddressLookupCheckStatusLambdaFunction extends RequestHandler[String, jMap
   private val logger = LoggerFactory.getLogger(classOf[AddressLookupCheckStatusLambdaFunction])
 
   override def handleRequest(schemaName: String, contextNotUsed: Context): jMap[String, String] = {
-    Await.result(checkLookupViewStatus(Repository().forIngest, schemaName), 5.seconds).asJava
+    Await.result(checkLookupViewStatus(Repository().forIngest, schemaName), 50.seconds).asJava
   }
 
   private[lambdas] def checkLookupViewStatus(repository: IngestRepository, schemaName: String): Future[Map[String, String]] = {
