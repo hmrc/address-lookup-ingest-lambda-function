@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE __schema_name__.create_address_lookup_view(the_schema_name varchar)
+CREATE OR REPLACE PROCEDURE create_address_lookup_view(the_schema_name varchar)
     LANGUAGE plpgsql
 AS
 $$
