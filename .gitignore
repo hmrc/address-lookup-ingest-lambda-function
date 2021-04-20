@@ -12,3 +12,6 @@ tmp
 *.iws
 /venv/
 *.pyc
+
+**/target/
+resources/csv/*.csv
