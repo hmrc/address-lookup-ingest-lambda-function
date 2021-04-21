@@ -11,6 +11,7 @@ Once build:
 ```shell
 make push-s3
 ```
+
 # Running
 The various lambda functions need the following entries in `credstash` for a given environment:
 
