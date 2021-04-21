@@ -22,5 +22,10 @@ pipeline {
            """)
       }
     }
+    stage ('Run cip-attval-terraform job') {
+      steps {
+        build job: 'cip-attval-terraform/terraform-environments'
+      }
+    }
   }
 }
