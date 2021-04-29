@@ -51,12 +51,12 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
       .unsafeToFuture()
       .flatMap {
         case None    =>
-          sql"""REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+          Fragment.const(s"""REVOKE CREATE ON SCHEMA public FROM PUBLIC;
                | CREATE USER $ingestorUser;
                | GRANT rds_iam TO $ingestorUser;
                | GRANT ALL ON DATABASE $database TO $ingestorUser;
                | GRANT CREATE ON SCHEMA public TO $ingestorUser;
-               |""".stripMargin.update.run
+               |""".stripMargin).update.run
                    .transact(transactor)
                    .unsafeToFuture()
         case Some(_) =>
@@ -76,11 +76,12 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
       .unsafeToFuture()
       .flatMap {
         case None    =>
-          sql"""CREATE USER $readerUser ENCRYPTED PASSWORD '$readerPassword';
-               |GRANT CONNECT ON DATABASE $database TO $readerUser;""".stripMargin
-                                                                      .update.run
-                                                                      .transact(transactor)
-                                                                      .unsafeToFuture()
+          Fragment.const(s"""CREATE USER $readerUser ENCRYPTED PASSWORD '$readerPassword';
+               |GRANT CONNECT ON DATABASE $database TO $readerUser;
+               |""".stripMargin)
+                    .update.run
+                    .transact(transactor)
+                    .unsafeToFuture()
         case Some(_) =>
           logger.info(s"'reader' user already exists")
           Future.successful(0)

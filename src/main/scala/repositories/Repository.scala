@@ -1,15 +1,13 @@
 package repositories
 
 import cats.effect.{ContextShift, IO}
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
-import com.amazonaws.services.rds.auth.{GetIamAuthTokenRequest, RdsIamAuthTokenGenerator}
 import doobie.Transactor
 import me.lamouri.JCredStash
 
 import java.util
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.collection.JavaConverters._
 
 object Repository {
   case class Repositories(forAdmin: AdminRepository, forIngest: IngestRepository)
@@ -49,30 +47,8 @@ object Repository {
       "org.postgresql.Driver",
       s"jdbc:postgresql://${creds.host}:${creds.port}/${creds.database}",
       creds.ingestor,
-      creds.ingestorToken
+      creds.ingestorPassword
     )
-  }
-
-  private def generateAuthToken(
-                                 region: String,
-                                 hostName: String,
-                                 port: String,
-                                 username: String
-                               ) = {
-    val generator = RdsIamAuthTokenGenerator.builder
-                                            .credentials(new DefaultAWSCredentialsProviderChain)
-                                            .region(region)
-                                            .build
-
-    val authToken = generator.getAuthToken(
-      GetIamAuthTokenRequest.builder
-                            .hostname(hostName)
-                            .port(port.toInt)
-                            .userName(username)
-                            .build
-    )
-
-    authToken
   }
 
   sealed trait Credentials {
@@ -82,7 +58,7 @@ object Repository {
     def admin: String
     def adminPassword: String
     def ingestor: String
-    def ingestorToken: String
+    def ingestorPassword: String
     def reader: String
     def readerPassword: String
     def csvBaseDir: String
@@ -105,7 +81,7 @@ object Repository {
     override def admin: String = "root"
     override def adminPassword: String = "password"
     override def ingestor: String = admin
-    override def ingestorToken: String = adminPassword
+    override def ingestorPassword: String = adminPassword
     override def reader: String = admin
     override def readerPassword: String = adminPassword
     override def csvBaseDir: String = "src/test/resources/csv"
@@ -127,10 +103,9 @@ object Repository {
     override def admin: String = retrieveCredentials("address_lookup_rds_admin_user")
     override def adminPassword: String = retrieveCredentials("address_lookup_rds_admin_password")
     override def ingestor: String = retrieveCredentials("address_lookup_rds_ingest_user")
-    override def ingestorToken: String = generateAuthToken("eu-west-2", host, "5432", ingestor)
+    override def ingestorPassword: String = retrieveCredentials("address_lookup_rds_ingest_password")
     override def reader: String = retrieveCredentials("address_lookup_rds_readonly_user")
     override def readerPassword: String = retrieveCredentials("address_lookup_rds_readonly_password")
     override def csvBaseDir: String = "/mnt/efs/"
   }
-
 }
