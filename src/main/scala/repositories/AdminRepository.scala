@@ -43,6 +43,7 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
 
   private def initialiseIngestUser() = {
     val ingestorUser = credentials.ingestor
+    val ingestorPassword = credentials.ingestorPassword
     val database = credentials.database
     sql"SELECT usename FROM pg_user WHERE usename = $ingestorUser"
       .query[String]
@@ -52,8 +53,7 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
       .flatMap {
         case None    =>
           Fragment.const(s"""REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-               | CREATE USER $ingestorUser;
-               | GRANT rds_iam TO $ingestorUser;
+               | CREATE USER $ingestorUser ENCRYPTED PASSWORD '$ingestorPassword';
                | GRANT ALL ON DATABASE $database TO $ingestorUser;
                | GRANT CREATE ON SCHEMA public TO $ingestorUser;
                |""".stripMargin).update.run
