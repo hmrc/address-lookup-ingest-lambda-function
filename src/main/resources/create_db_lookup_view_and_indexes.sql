@@ -15,11 +15,11 @@ BEGIN
 
     CREATE MATERIALIZED VIEW address_lookup AS
     SELECT b.uprn                                                                                              AS uprn,
-           array_to_string(ARRAY [btrim(d.sub_building_name::text), btrim(d.building_name::text)], ', '::text) AS line1,
+           array_to_string(ARRAY [nullif(btrim(d.sub_building_name::text), ''), nullif(btrim(d.building_name::text), '')], ', '::text) AS line1,
            array_to_string(
-                   ARRAY [btrim(''::text || d.building_number), btrim(d.dependent_thoroughfare::text), btrim(d.thoroughfare::text)],
+                   ARRAY [nullif(btrim(''::text || d.building_number), ''), nullif(btrim(d.dependent_thoroughfare::text), ''), nullif(btrim(d.thoroughfare::text), '')],
                    ' '::text)                                                                                  AS line2,
-           array_to_string(ARRAY [btrim(d.double_dependent_locality::text), btrim(d.dependent_locality::text)],
+           array_to_string(ARRAY [nullif(btrim(d.double_dependent_locality::text), ''), nullif(btrim(d.dependent_locality::text), '')],
                            ' '::text)                                                                          AS line3,
            CASE
                WHEN b.country::text = 'S'::text THEN 'GB-SCT'::text
@@ -54,16 +54,16 @@ BEGIN
            asd.administrative_area                                                                             AS localAuthority,
            to_tsvector('english'::regconfig, array_to_string(
                    ARRAY [
-                       btrim(d.sub_building_name::text),
-                       btrim(d.building_name::text),
-                       btrim(d.building_number::text),
-                       btrim(d.dependent_thoroughfare::text),
-                       btrim(d.thoroughfare::text),
-                       btrim(d.post_town::text),
-                       btrim(d.double_dependent_locality::text),
-                       btrim(d.dependent_locality::text),
-                       btrim(asd.administrative_area::text),
-                       btrim(d.po_box_number::text)],
+                       nullif(btrim(d.sub_building_name::text), ''),
+                       nullif(btrim(d.building_name::text), ''),
+                       nullif(btrim(d.building_number::text), ''),
+                       nullif(btrim(d.dependent_thoroughfare::text), ''),
+                       nullif(btrim(d.thoroughfare::text), ''),
+                       nullif(btrim(d.post_town::text), ''),
+                       nullif(btrim(d.double_dependent_locality::text), ''),
+                       nullif(btrim(d.dependent_locality::text), ''),
+                       nullif(btrim(asd.administrative_area::text), ''),
+                       nullif(btrim(d.po_box_number::text), '')],
                    ' '::text))                                                                                 AS address_lookup_ft_col
     FROM abp_delivery_point d
              JOIN abp_blpu b ON b.uprn = d.uprn
