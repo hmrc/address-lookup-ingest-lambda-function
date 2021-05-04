@@ -1,4 +1,5 @@
-CREATE OR REPLACE PROCEDURE create_address_lookup_view(the_schema_name varchar)
+CREATE OR REPLACE FUNCTION create_address_lookup_view(the_schema_name varchar)
+    RETURNS BOOLEAN
     LANGUAGE plpgsql
 AS
 $$
@@ -117,6 +118,8 @@ BEGIN
     SET status    = 'completed',
         timestamp = now()
     WHERE schema_name = the_schema_name;
+
+    RETURN TRUE;
 EXCEPTION
     WHEN OTHERS THEN
         UPDATE public.address_lookup_status

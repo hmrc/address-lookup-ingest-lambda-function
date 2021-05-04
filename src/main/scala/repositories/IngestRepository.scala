@@ -158,8 +158,8 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
       f <- Fragment.const(createViewSql).update.run.transact(transactor)
       v <- Fragment.const(
         s"""BEGIN TRANSACTION;
-           | CALL create_address_lookup_view('$schemaName');
-           | COMMIT;""".stripMargin).update.run.transact(transactor)
+           |SELECT create_address_lookup_view('$schemaName');
+           |COMMIT;""".stripMargin).update.run.transact(transactor)
     } yield (f, v)).unsafeToFuture()
   }
 
