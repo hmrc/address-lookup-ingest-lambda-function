@@ -49,7 +49,6 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
       .query[String]
       .option
       .transact(transactor)
-      .unsafeToFuture()
       .flatMap {
         case None    =>
           Fragment.const(s"""REVOKE CREATE ON SCHEMA public FROM PUBLIC;
@@ -58,11 +57,10 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
                | GRANT CREATE ON SCHEMA public TO $ingestorUser;
                |""".stripMargin).update.run
                    .transact(transactor)
-                   .unsafeToFuture()
         case Some(_) =>
           logger.info(s"'ingestor' user already exists")
-          Future.successful(0)
-      }
+          IO(0)
+      }.unsafeToFuture
   }
 
   private def initialiseReaderUser() = {
@@ -73,7 +71,6 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
       .query[String]
       .option
       .transact(transactor)
-      .unsafeToFuture()
       .flatMap {
         case None    =>
           Fragment.const(s"""CREATE USER $readerUser ENCRYPTED PASSWORD '$readerPassword';
@@ -81,11 +78,10 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
                |""".stripMargin)
                     .update.run
                     .transact(transactor)
-                    .unsafeToFuture()
         case Some(_) =>
           logger.info(s"'reader' user already exists")
-          Future.successful(0)
-      }
+          IO(0)
+      }.unsafeToFuture
   }
 
   def listUsers: Future[List[String]] = {

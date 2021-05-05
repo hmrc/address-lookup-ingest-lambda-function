@@ -1,6 +1,7 @@
 package repositories
 
 import cats.effect.IO
+import cats.implicits._
 import doobie._
 import doobie.implicits._
 import doobie.postgres._
@@ -64,7 +65,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
       _ <- createTables(schemaName)
       _ <- insertNewSchemaStatus(schemaName)
     } yield schemaName
-  }
+  }.unsafeToFuture()
 
   private def ensureStatusTableExists() = {
     sql"""CREATE TABLE IF NOT EXISTS public.address_lookup_status (
@@ -74,7 +75,6 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
          |    timestamp   TIMESTAMP NOT NULL);""".stripMargin
                                                  .update.run
                                                  .transact(transactor)
-                                                 .unsafeToFuture()
   }
 
   private def getSchemasToDrop() = {
@@ -89,11 +89,9 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
                           .query[String]
                           .to[List]
                           .transact(transactor)
-                          .unsafeToFuture()
   }
 
   private def dropSchemas(schemas: List[String]) = {
-    Future.sequence(
       schemas
         .map(schema =>
           Fragment.const(
@@ -102,9 +100,8 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
                | WHERE schema_name = '$schema';""".stripMargin)
         )
         .map { ssql =>
-          ssql.update.run.transact(transactor).unsafeToFuture()
-        }
-    )
+          ssql.update.run.transact(transactor)
+        }.sequence
   }
 
   private val timestampFormat = DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")
@@ -120,7 +117,6 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
             .update
             .run
             .transact(transactor)
-            .unsafeToFuture()
             .map(_ => schemaName)
   }
 
@@ -133,19 +129,18 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
       .unsafeToFuture()
   }
 
-  private def createTables(schemaName: String): Future[Int] = {
+  private def createTables(schemaName: String) = {
     val createSchemaSql =
       Source.fromURL(getClass.getResource("/create_db_schema.sql"), "utf-8").mkString.replaceAll("__schema__", schemaName)
-    Fragment.const(createSchemaSql).update.run.transact(transactor).unsafeToFuture()
+    Fragment.const(createSchemaSql).update.run.transact(transactor)
   }
 
-  private def insertNewSchemaStatus(schemaName: String): Future[Int] = {
+  private def insertNewSchemaStatus(schemaName: String) = {
     sql"""INSERT INTO public.address_lookup_status(schema_name, status, timestamp)
          | VALUES($schemaName, 'schema_created', NOW())""".stripMargin
                                                           .update
                                                           .run
                                                           .transact(transactor)
-                                                          .unsafeToFuture()
   }
 
   def createLookupView(schemaName: String): Future[(Int, Int)] = {
