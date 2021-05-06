@@ -19,9 +19,10 @@ The various lambda functions need the following entries in `credstash` for a giv
 |-----------|-----------|-------------|
 |address_lookup_rds_host|The `rds endpoint` for the instance|`addresslookup.abcd123.eu-west-2.rds.amazonaws.com`|
 |address_lookup_rds_database|The name of the database used by this lambda|`addressbasepremium`|
-|address_lookup_rds_ingest_user|The application user that will ingest the data|`addresslookupingester`|
+|address_lookup_rds_ingest_user|The `step function` user that will ingest the data|`addresslookupingester`|
+|address_lookup_rds_ingest_password|The `step function` user password|`???`|
 |address_lookup_rds_admin_user|The `rds` `master user` used for initial setup of application user|`root`|
-|address_lookup_rds_admin_password|The `rds` `master password` used for initial setuup of application user/`???`/
+|address_lookup_rds_admin_password|The `rds` `master password` used for initial setup of application user|`???`|
 
 
 ### License
