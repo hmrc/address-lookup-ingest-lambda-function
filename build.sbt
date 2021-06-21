@@ -21,5 +21,6 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-postgres" % doobieVersion,
   "ch.qos.logback" % "logback-core" % "1.2.3",
   "org.slf4j" % "slf4j-simple" % "1.7.30",
-  "org.scalatest" %% "scalatest" % "3.2.2" % Test
+  "org.scalatest" %% "scalatest" % "3.2.2" % Test,
+  "org.scalatestplus" % "mockito-3-4_2.12" % "3.1.3.0" % Test,
 )
