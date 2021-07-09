@@ -101,6 +101,14 @@ BEGIN
         timestamp = now()
     WHERE schema_name = the_schema_name;
 
+    CREATE INDEX address_lookup_town_idx
+        ON address_lookup (posttown);
+
+    UPDATE public.address_lookup_status
+    SET status    = 'posttown_index_created',
+        timestamp = now()
+    WHERE schema_name = the_schema_name;
+
     CREATE INDEX IF NOT EXISTS address_lookup_uprn_idx
         ON address_lookup (uprn);
 
