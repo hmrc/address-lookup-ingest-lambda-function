@@ -203,7 +203,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
     if (!proceed) Future.successful(0)
 
     Fragment.const(
-      s"""DROP VIEW public.address_lookup;
+      s"""DROP VIEW IF EXISTS public.address_lookup;
          | CREATE OR REPLACE VIEW public.address_lookup AS SELECT * FROM ${schemaName}.address_lookup;
          | GRANT SELECT ON public.address_lookup TO addresslookupreader;
          | UPDATE public.address_lookup_status SET status = 'finalised' WHERE schema_name = '$schemaName';"""
