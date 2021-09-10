@@ -16,10 +16,17 @@ BEGIN
 
     CREATE MATERIALIZED VIEW address_lookup AS
     SELECT b.uprn                                                                                              AS uprn,
-           array_to_string(ARRAY [NULLIF(btrim(d.sub_building_name::text), ''), NULLIF(btrim(d.building_name::text), '')], ', '::text) AS line1,
-           array_to_string(
-                   ARRAY [NULLIF(btrim(''::text || d.building_number), ''), NULLIF(btrim(d.dependent_thoroughfare::text), ''), NULLIF(btrim(d.thoroughfare::text), '')],
-                   ' '::text)                                                                                  AS line2,
+           CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN
+                    'PO BOX ' || BTRIM(d.po_box_number::text)
+                ELSE
+                    array_to_string(ARRAY [NULLIF(btrim(d.sub_building_name::text), ''), NULLIF(btrim(d.building_name::text), '')], ', '::text)
+               END AS line1,
+           CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN NULL
+                ELSE
+                    array_to_string(
+                        ARRAY [NULLIF(btrim(''::text || d.building_number), ''), NULLIF(btrim(d.dependent_thoroughfare::text), ''), NULLIF(btrim(d.thoroughfare::text), '')],
+                       ' '::text)
+               END AS line2,
            array_to_string(ARRAY [NULLIF(btrim(d.double_dependent_locality::text), ''), NULLIF(btrim(d.dependent_locality::text), '')],
                            ' '::text)                                                                          AS line3,
            CASE
@@ -51,7 +58,7 @@ BEGIN
            upper(
                    regexp_replace(d.postcode::text, '[ \\t]+'::text, ' '::text))                               AS postcode,
            concat(b.latitude, ',', b.longitude)                                                                AS location,
-           NULLIF(TRIM(d.po_box_number::text), '')                                                             AS poboxnumber,
+           NULLIF(BTRIM(d.po_box_number::text), '')                                                             AS poboxnumber,
            asd.administrative_area                                                                             AS localAuthority,
            to_tsvector('english'::regconfig, array_to_string(
                    ARRAY [

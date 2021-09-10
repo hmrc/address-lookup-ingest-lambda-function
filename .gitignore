@@ -15,3 +15,5 @@ tmp
 
 **/target/
 resources/csv/*.csv
+.bsp/
+null/
