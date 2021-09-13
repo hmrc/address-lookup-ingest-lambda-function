@@ -21,7 +21,7 @@ BEGIN
                 ELSE
                     array_to_string(ARRAY [NULLIF(btrim(d.sub_building_name::text), ''), NULLIF(btrim(d.building_name::text), '')], ', '::text)
                END AS line1,
-           CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN NULL
+           CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN ''
                 ELSE
                     array_to_string(
                         ARRAY [NULLIF(btrim(''::text || d.building_number), ''), NULLIF(btrim(d.dependent_thoroughfare::text), ''), NULLIF(btrim(d.thoroughfare::text), '')],
