@@ -37,10 +37,10 @@ BEGIN
                ELSE NULL::text
                END                                                                                             AS subdivision,
            CASE
-               WHEN b.country::text = 'S'::text THEN 'UK'::text
-               WHEN b.country::text = 'E'::text THEN 'UK'::text
-               WHEN b.country::text = 'W'::text THEN 'UK'::text
-               WHEN b.country::text = 'N'::text THEN 'UK'::text
+               WHEN b.country::text = 'S'::text THEN 'GB'::text
+               WHEN b.country::text = 'E'::text THEN 'GB'::text
+               WHEN b.country::text = 'W'::text THEN 'GB'::text
+               WHEN b.country::text = 'N'::text THEN 'GB'::text
                WHEN b.country::text = 'L'::text AND "substring"(d.postcode::text, 1, 1) = 'G'::text THEN 'GG'::text
                WHEN b.country::text = 'L'::text AND "substring"(d.postcode::text, 1, 1) = 'J'::text THEN 'JE'::text
                WHEN b.country::text = 'M'::text THEN 'IM'::text
