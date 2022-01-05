@@ -94,7 +94,7 @@ object Repository {
 
     private def retrieveCredentials(credential: String) = {
       val credStash = new JCredStash()
-      credStash.getSecret(credstashTableName, credential, context)
+      credStash.getSecret(credstashTableName, credential, context).trim
     }
 
     override def host: String = retrieveCredentials("address_lookup_rds_host")

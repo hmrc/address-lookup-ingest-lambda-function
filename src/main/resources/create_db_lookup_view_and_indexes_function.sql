@@ -16,17 +16,20 @@ BEGIN
 
     CREATE MATERIALIZED VIEW address_lookup AS
     SELECT b.uprn                                                                                              AS uprn,
+           b.parent_uprn                                                                                       AS parent_uprn,
+           asd.usrn                                                                                            AS usrn,
+           d.organisation_name                                                                                 AS organisation_name,
            CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN
                     'PO BOX ' || BTRIM(d.po_box_number::text)
                 ELSE
                     array_to_string(ARRAY [NULLIF(btrim(d.sub_building_name::text), ''), NULLIF(btrim(d.building_name::text), '')], ', '::text)
-               END AS line1,
+               END                                                                                             AS line1,
            CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN ''
                 ELSE
                     array_to_string(
                         ARRAY [NULLIF(btrim(''::text || d.building_number), ''), NULLIF(btrim(d.dependent_thoroughfare::text), ''), NULLIF(btrim(d.thoroughfare::text), '')],
                        ' '::text)
-               END AS line2,
+               END                                                                                             AS line2,
            array_to_string(ARRAY [NULLIF(btrim(d.double_dependent_locality::text), ''), NULLIF(btrim(d.dependent_locality::text), '')],
                            ' '::text)                                                                          AS line3,
            CASE
@@ -45,21 +48,21 @@ BEGIN
                WHEN b.country::text = 'L'::text AND "substring"(d.postcode::text, 1, 1) = 'J'::text THEN 'JE'::text
                WHEN b.country::text = 'M'::text THEN 'IM'::text
                ELSE 'NOT_FOUND'::text
-               END                                                                                             AS countrycode,
-           b.local_custodian_code                                                                              AS localcustodiancode,
+               END                                                                                             AS country_code,
+           b.local_custodian_code                                                                              AS local_custodian_code,
            CASE
                WHEN lower(l.language::text) = 'eng'::text THEN 'en'::text
                WHEN lower(l.language::text) = 'cym'::text THEN 'cy'::text
                ELSE NULL::text
                END                                                                                             AS language,
-           b.blpu_state                                                                                        AS blpustate,
-           b.logical_status                                                                                    AS logicalstatus,
+           b.blpu_state                                                                                        AS blpu_state,
+           b.logical_status                                                                                    AS logical_status,
            d.post_town                                                                                         AS posttown,
            upper(
                    regexp_replace(d.postcode::text, '[ \\t]+'::text, ' '::text))                               AS postcode,
            concat(b.latitude, ',', b.longitude)                                                                AS location,
-           NULLIF(BTRIM(d.po_box_number::text), '')                                                             AS poboxnumber,
-           asd.administrative_area                                                                             AS localAuthority,
+           NULLIF(BTRIM(d.po_box_number::text), '')                                                            AS pobox_number,
+           asd.administrative_area                                                                             AS local_authority,
            to_tsvector('english'::regconfig, array_to_string(
                    ARRAY [
                        NULLIF(btrim(d.sub_building_name::text), ''),
