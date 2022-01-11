@@ -18,7 +18,7 @@ BEGIN
     SELECT b.uprn                                                                                              AS uprn,
            b.parent_uprn                                                                                       AS parent_uprn,
            asd.usrn                                                                                            AS usrn,
-           d.organisation_name                                                                                 AS organisation_name,
+           NULLIF(BTRIM(d.organisation_name::text), '')                                                        AS organisation_name,
            CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN
                     'PO BOX ' || BTRIM(d.po_box_number::text)
                 ELSE
