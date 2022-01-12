@@ -18,29 +18,29 @@ BEGIN
     SELECT b.uprn                             AS uprn,
            b.parent_uprn                      AS parent_uprn,
            asd.usrn                           AS usrn,
-           upper(d.organisation_name)         AS organisation_name,
-           upper(d.po_box_number)             AS po_box_number,
-           upper(d.sub_building_name)         AS sub_building_name,
-           upper(d.building_name)             AS building_name,
+           UPPER(d.organisation_name)         AS organisation_name,
+           UPPER(d.po_box_number)             AS po_box_number,
+           UPPER(d.sub_building_name)         AS sub_building_name,
+           UPPER(d.building_name)             AS building_name,
            d.building_number                  AS building_number,
-           upper(d.dependent_thoroughfare)    AS dependent_thoroughfare,
-           upper(d.thoroughfare)              AS thoroughfare,
-           upper(d.double_dependent_locality) AS double_dependent_locality,
-           upper(d.dependent_locality)        AS dependent_locality,
-           upper(b.country)                   AS country,
+           UPPER(d.dependent_thoroughfare)    AS dependent_thoroughfare,
+           UPPER(d.thoroughfare)              AS thoroughfare,
+           UPPER(d.double_dependent_locality) AS double_dependent_locality,
+           UPPER(d.dependent_locality)        AS dependent_locality,
+           UPPER(b.country)                   AS country,
            b.local_custodian_code             AS local_custodian_code,
-           upper(l.language)                  AS "language",
-           upper(d.postcode)                  AS postcode,
+           UPPER(l.language)                  AS "language",
+           UPPER(d.postcode)                  AS postcode,
            b.blpu_state                       AS blpu_state,
            b.logical_status                   AS logical_status,
-           upper(d.post_town)                 AS post_town,
+           UPPER(d.post_town)                 AS post_town,
            b.latitude                         AS latitude,
            b.longitude                        AS longitude,
            asd.administrative_area            AS administrative_area
     FROM abp_delivery_point d
              JOIN abp_blpu b ON b.uprn = d.uprn
              JOIN abp_lpi l ON l.uprn = b.uprn AND l.logical_status = 1
-             JOIN abp_street_descriptor asd ON l.usrn = asd.usrn and l.language = asd.language
+             JOIN abp_street_descriptor asd ON l.usrn = asd.usrn AND l.language = asd.language
 
     DROP MATERIALIZED VIEW IF EXISTS address_lookup;
 
@@ -108,7 +108,8 @@ BEGIN
                        NULLIF(btrim(double_dependent_locality::text), ''),
                        NULLIF(btrim(dependent_locality::text), ''),
                        NULLIF(btrim(administrative_area::text), ''),
-                       NULLIF(btrim(po_box_number::text), '')],
+                       NULLIF(btrim(po_box_number::text), ''),
+                       NULLIF(btrim(organisation_name::text), '')],
                    ' '::text))                                                                                   AS address_lookup_ft_col
     FROM address_lookup_uppercase
     WHERE "language" = 'ENG';
