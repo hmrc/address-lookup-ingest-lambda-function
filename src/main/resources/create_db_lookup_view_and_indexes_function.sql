@@ -18,28 +18,28 @@ BEGIN
     SELECT b.uprn                                                                                              AS uprn,
            b.parent_uprn                                                                                       AS parent_uprn,
            asd.usrn                                                                                            AS usrn,
-           NULLIF(BTRIM(d.organisation_name::text), '')                                                        AS organisation_name,
-           CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN
+           UPPER(NULLIF(BTRIM(d.organisation_name::text), ''))                                                 AS organisation_name,
+           UPPER(CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN
                     'PO BOX ' || BTRIM(d.po_box_number::text)
                 ELSE
                     array_to_string(ARRAY [NULLIF(btrim(d.sub_building_name::text), ''), NULLIF(btrim(d.building_name::text), '')], ', '::text)
-               END                                                                                             AS line1,
-           CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN ''
+               END)                                                                                             AS line1,
+           UPPER(CASE WHEN NULLIF(BTRIM(d.po_box_number::text), '') IS NOT NULL THEN ''
                 ELSE
                     array_to_string(
                         ARRAY [NULLIF(btrim(''::text || d.building_number), ''), NULLIF(btrim(d.dependent_thoroughfare::text), ''), NULLIF(btrim(d.thoroughfare::text), '')],
                        ' '::text)
-               END                                                                                             AS line2,
-           array_to_string(ARRAY [NULLIF(btrim(d.double_dependent_locality::text), ''), NULLIF(btrim(d.dependent_locality::text), '')],
-                           ' '::text)                                                                          AS line3,
-           CASE
+               END)                                                                                             AS line2,
+           UPPER(array_to_string(ARRAY [NULLIF(btrim(d.double_dependent_locality::text), ''), NULLIF(btrim(d.dependent_locality::text), '')],
+                           ' '::text))                                                                          AS line3,
+           UPPER(CASE
                WHEN b.country::text = 'S'::text THEN 'GB-SCT'::text
                WHEN b.country::text = 'E'::text THEN 'GB-ENG'::text
                WHEN b.country::text = 'W'::text THEN 'GB-WLS'::text
                WHEN b.country::text = 'N'::text THEN 'GB-NIR'::text
                ELSE NULL::text
-               END                                                                                             AS subdivision,
-           CASE
+               END)                                                                                             AS subdivision,
+           UPPER(CASE
                WHEN b.country::text = 'S'::text THEN 'GB'::text
                WHEN b.country::text = 'E'::text THEN 'GB'::text
                WHEN b.country::text = 'W'::text THEN 'GB'::text
@@ -48,20 +48,19 @@ BEGIN
                WHEN b.country::text = 'L'::text AND "substring"(d.postcode::text, 1, 1) = 'J'::text THEN 'JE'::text
                WHEN b.country::text = 'M'::text THEN 'IM'::text
                ELSE 'NOT_FOUND'::text
-               END                                                                                             AS country_code,
+               END)                                                                                            AS country_code,
            b.local_custodian_code                                                                              AS local_custodian_code,
-           CASE
+           UPPER(CASE
                WHEN lower(l.language::text) = 'eng'::text THEN 'en'::text
                WHEN lower(l.language::text) = 'cym'::text THEN 'cy'::text
                ELSE NULL::text
-               END                                                                                             AS language,
+               END)                                                                                            AS language,
            b.blpu_state                                                                                        AS blpu_state,
            b.logical_status                                                                                    AS logical_status,
-           d.post_town                                                                                         AS posttown,
-           upper(
-                   regexp_replace(d.postcode::text, '[ \\t]+'::text, ' '::text))                               AS postcode,
+           UPPER(d.post_town)                                                                                  AS posttown,
+           UPPER( regexp_replace(d.postcode::text, '[ \\t]+'::text, ' '::text))                                AS postcode,
            concat(b.latitude, ',', b.longitude)                                                                AS location,
-           NULLIF(BTRIM(d.po_box_number::text), '')                                                            AS pobox_number,
+           UPPER(NULLIF(BTRIM(d.po_box_number::text), ''))                                                     AS pobox_number,
            asd.administrative_area                                                                             AS local_authority,
            to_tsvector('english'::regconfig, array_to_string(
                    ARRAY [
@@ -74,7 +73,8 @@ BEGIN
                        NULLIF(btrim(d.double_dependent_locality::text), ''),
                        NULLIF(btrim(d.dependent_locality::text), ''),
                        NULLIF(btrim(asd.administrative_area::text), ''),
-                       NULLIF(btrim(d.po_box_number::text), '')],
+                       NULLIF(btrim(d.po_box_number::text), ''),
+                       NULLIF(btrim(d.organisation_name::text), '')],
                    ' '::text))                                                                                 AS address_lookup_ft_col
     FROM abp_delivery_point d
              JOIN abp_blpu b ON b.uprn = d.uprn
