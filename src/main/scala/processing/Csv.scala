@@ -23,12 +23,15 @@ class Csv(private val root: String) {
         .map { case (rid, fn, hs) => rid -> createWriterAndAddHeader(fn, hs) }
         .toMap
 
+    println(s">>> typeToWriterMap: ${typeToWriterMap}")
+
     Paths
       .get(root)
       .toFile
       .listFiles
-      .filter(_.getName.endsWith(".zip"))
-      .flatMap(unpackZipFile)
+      .map{f => println(s">>> file in list: ${f}"); f}
+      .filter(_.getName.startsWith("AddressBasePremium"))
+//      .flatMap(unpackZipFile)
       .foreach(f => processFile(typeToWriterMap)(f))
 
     typeToWriterMap.foreach{case (_, out) => out.flush(); out.close()}
@@ -57,6 +60,7 @@ class Csv(private val root: String) {
   }
 
   private def processFile(typeToWriterMap: Map[String, PrintWriter])(f: File): Unit = {
+    println(s">>> f: ${f.getAbsolutePath}")
     val fr = new BufferedReader(new FileReader(f))
 
     Stream.continually(fr.readLine()).takeWhile(_ != null).foreach { l =>
