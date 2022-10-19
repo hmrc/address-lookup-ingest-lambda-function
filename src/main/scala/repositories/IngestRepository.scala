@@ -178,7 +178,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
       _       <- switchAddressLookupViewToNew(proceed, schemaName)
       _       = cleanupOldEpochDirectories(proceed, epoch)
       //      _ =  cleanupProcessedCsvs(proceed, epoch)
-    } yield ok
+    } yield true
   }
 
   private def switchAddressLookupViewToNew(proceed: Boolean, schemaName: String): Future[Int] = {
