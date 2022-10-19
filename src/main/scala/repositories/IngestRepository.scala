@@ -174,7 +174,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
     for {
       status  <- getSchemaStatus(schemaName)
       ok      <- isNewSchemaWithinChangeTolerance(schemaName)
-      proceed = status._1 == "completed" && ok
+      proceed = status._1 == "completed" //&& ok
       _       <- switchAddressLookupViewToNew(proceed, schemaName)
       _       = cleanupOldEpochDirectories(proceed, epoch)
       //      _ =  cleanupProcessedCsvs(proceed, epoch)
