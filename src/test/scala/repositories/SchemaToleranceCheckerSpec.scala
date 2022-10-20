@@ -75,4 +75,26 @@ class SchemaToleranceCheckerSpec extends AnyFlatSpec with Matchers with MockitoS
       checker.withinTolerance("new-schema", "old-schema", tolerancePercent*10.0F), 5.seconds)
     result shouldBe false
   }
+
+  it should "not validate when new schema is smaller than old schema by orders of magnitude" in {
+    val checker = new SchemaToleranceChecker(getCount)
+    countValues = countValues.empty
+    countValues += ("new-schema" -> 1000000)
+    countValues += ("old-schema" -> 110000000)
+
+    val result = Await.result(
+      checker.withinTolerance("new-schema", "old-schema", tolerancePercent*10.0F), 5.seconds)
+    result shouldBe false
+  }
+
+  it should "not validate when new schema is larger than old schema by orders of magnitude" in {
+    val checker = new SchemaToleranceChecker(getCount)
+    countValues = countValues.empty
+    countValues += ("old-schema" -> 1000000)
+    countValues += ("new-schema" -> 110000000)
+
+    val result = Await.result(
+      checker.withinTolerance("new-schema", "old-schema", tolerancePercent*10.0F), 5.seconds)
+    result shouldBe false
+  }
 }
