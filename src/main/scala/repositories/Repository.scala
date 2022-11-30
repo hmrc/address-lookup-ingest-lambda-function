@@ -88,6 +88,8 @@ object Repository {
   }
 
   final class RdsCredentials() extends Credentials {
+    private val credStashPrefix = sys.env.getOrElse("CREDSTASH_PREFIX", "")
+
     private val credstashTableName = "credential-store"
     private val context: util.Map[String, String] =
       Map("role" -> "address_lookup_file_download").asJava
@@ -97,15 +99,15 @@ object Repository {
       credStash.getSecret(credstashTableName, credential, context).trim
     }
 
-    override def host: String = retrieveCredentials("address_lookup_rds_host")
+    override def host: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_host")
     override def port: String = "5432"
-    override def database: String = retrieveCredentials("address_lookup_rds_database")
-    override def admin: String = retrieveCredentials("address_lookup_rds_admin_user")
-    override def adminPassword: String = retrieveCredentials("address_lookup_rds_admin_password")
-    override def ingestor: String = retrieveCredentials("address_lookup_rds_ingest_user")
-    override def ingestorPassword: String = retrieveCredentials("address_lookup_rds_ingest_password")
-    override def reader: String = retrieveCredentials("address_lookup_rds_readonly_user")
-    override def readerPassword: String = retrieveCredentials("address_lookup_rds_readonly_password")
+    override def database: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_database")
+    override def admin: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_admin_user")
+    override def adminPassword: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_admin_password")
+    override def ingestor: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_ingest_user")
+    override def ingestorPassword: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_ingest_password")
+    override def reader: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_readonly_user")
+    override def readerPassword: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_readonly_password")
     override def csvBaseDir: String = "/mnt/efs/"
   }
 }
