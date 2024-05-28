@@ -11,3 +11,4 @@ build:
 push-s3:
 	aws s3 cp $(TARGET_PATH)/$(ARTIFACT).jar s3://$(S3_BUCKET)/$(ARTIFACT).jar --acl=bucket-owner-full-control
 	aws s3 cp $(TARGET_PATH)/$(ARTIFACT).base64sha256 s3://$(S3_BUCKET)/$(ARTIFACT).base64sha256 --acl=bucket-owner-full-control --content-type=text/plain
+	aws s3 cp $(TARGET_PATH)/$(ARTIFACT).base64sha256 s3://$(S3_BUCKET)/$(ARTIFACT).jar.base64sha256 --acl=bucket-owner-full-control --content-type=text/plain
