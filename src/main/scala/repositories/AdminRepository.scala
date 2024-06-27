@@ -28,7 +28,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.io.Source
 
-class AdminRepository(transactor: => Transactor[IO], private val credentials: Credentials) {
+class AdminRepository(transactor: => Transactor[IO],
+                      private val credentials: Credentials) {
   private val logger = LoggerFactory.getLogger(classOf[AdminRepository])
 
   private val rootDir = credentials.csvBaseDir // not_used_currently
@@ -36,56 +37,8 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
   def initialiseUsers(): Future[Unit] = {
     logger.info(s"initialiseUsers()")
     for {
-      _ <- initialiseIngestUser()
-      _ <- initialiseReaderUser()
+      _ <- Future.successful("Do we need this?")
     } yield ()
-  }
-
-  private def initialiseIngestUser() = {
-    val ingestorUser = credentials.ingestor
-    val ingestorPassword = credentials.ingestorPassword
-    val database = credentials.database
-    sql"SELECT usename FROM pg_user WHERE usename = $ingestorUser"
-      .query[String]
-      .option
-      .transact(transactor)
-      .unsafeToFuture()
-      .flatMap {
-        case None    =>
-          Fragment.const(s"""REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-               | CREATE USER $ingestorUser ENCRYPTED PASSWORD '$ingestorPassword';
-               | GRANT ALL ON DATABASE $database TO $ingestorUser;
-               | GRANT CREATE ON SCHEMA public TO $ingestorUser;
-               |""".stripMargin).update.run
-                   .transact(transactor)
-                   .unsafeToFuture()
-        case Some(_) =>
-          logger.info(s"'ingestor' user already exists")
-          Future.successful(0)
-      }
-  }
-
-  private def initialiseReaderUser() = {
-    val readerUser = credentials.reader
-    val readerPassword = credentials.readerPassword
-    val database = credentials.database
-    sql"SELECT usename FROM pg_user WHERE usename = $readerUser"
-      .query[String]
-      .option
-      .transact(transactor)
-      .unsafeToFuture()
-      .flatMap {
-        case None    =>
-          Fragment.const(s"""CREATE USER $readerUser ENCRYPTED PASSWORD '$readerPassword';
-               |GRANT CONNECT ON DATABASE $database TO $readerUser;
-               |""".stripMargin)
-                    .update.run
-                    .transact(transactor)
-                    .unsafeToFuture()
-        case Some(_) =>
-          logger.info(s"'reader' user already exists")
-          Future.successful(0)
-      }
   }
 
   def listUsers: Future[List[String]] = {
@@ -97,5 +50,3 @@ class AdminRepository(transactor: => Transactor[IO], private val credentials: Cr
   }
 
 }
-
-
