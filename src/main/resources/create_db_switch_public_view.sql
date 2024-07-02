@@ -20,5 +20,5 @@ SELECT uprn,
        local_authority,
        address_lookup_ft_col
 FROM __schema__.address_lookup;
-GRANT SELECT ON public.address_lookup TO addresslookupreader;
+-- GRANT SELECT ON public.address_lookup TO addresslookupreader;
 UPDATE public.address_lookup_status SET status = 'finalised' WHERE schema_name = '__schema__';

@@ -10,7 +10,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Repository {
-  case class Repositories(forAdmin: AdminRepository, forIngest: IngestRepository)
+  case class Repositories(forAdmin: AdminRepository,
+                          forIngest: IngestRepository)
 
   def apply(): Repositories = repositories(Credentials())
   def forTesting(): Repositories =
@@ -25,7 +26,6 @@ object Repository {
       forIngest = new IngestRepository(ingestorTransactor, credentials)
     )
   }
-
 
   private def adminXa(creds: Credentials): Transactor[IO] = {
     implicit val cs: ContextShift[IO] =
@@ -46,8 +46,8 @@ object Repository {
     Transactor.fromDriverManager[IO](
       "org.postgresql.Driver",
       s"jdbc:postgresql://${creds.host}:${creds.port}/${creds.database}",
-      creds.ingestor,
-      creds.ingestorPassword
+      creds.admin,
+      creds.adminPassword
     )
   }
 
@@ -57,10 +57,6 @@ object Repository {
     def database: String
     def admin: String
     def adminPassword: String
-    def ingestor: String
-    def ingestorPassword: String
-    def reader: String
-    def readerPassword: String
     def csvBaseDir: String
   }
 
@@ -80,10 +76,6 @@ object Repository {
     override def database: String = "addressbasepremium"
     override def admin: String = "root"
     override def adminPassword: String = "password"
-    override def ingestor: String = admin
-    override def ingestorPassword: String = adminPassword
-    override def reader: String = admin
-    override def readerPassword: String = adminPassword
     override def csvBaseDir: String = "src/test/resources/csv"
   }
 
@@ -92,22 +84,28 @@ object Repository {
 
     private val credstashTableName = "credential-store"
     private val context: util.Map[String, String] =
+      Map("role" -> "cip_address_search").asJava
+
+    private val lookupContext: util.Map[String, String] =
       Map("role" -> "address_lookup_file_download").asJava
 
-    private def retrieveCredentials(credential: String) = {
+    private def retrieveCredentials(
+      credential: String,
+      context: util.Map[String, String] = context
+    ) = {
       val credStash = new JCredStash()
       credStash.getSecret(credstashTableName, credential, context).trim
     }
 
-    override def host: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_host")
+    override def host: String =
+      retrieveCredentials(s"address_search_rds_rw_host")
     override def port: String = "5432"
-    override def database: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_database")
-    override def admin: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_admin_user")
-    override def adminPassword: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_admin_password")
-    override def ingestor: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_ingest_user")
-    override def ingestorPassword: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_ingest_password")
-    override def reader: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_readonly_user")
-    override def readerPassword: String = retrieveCredentials(s"${credStashPrefix}address_lookup_rds_readonly_password")
+    override def database: String =
+      retrieveCredentials(s"address_search_rds_database")
+    override def admin: String =
+      retrieveCredentials(s"address_search_rds_admin_user")
+    override def adminPassword: String =
+      retrieveCredentials(s"address_search_rds_admin_password")
     override def csvBaseDir: String = "/mnt/efs/"
   }
 }
