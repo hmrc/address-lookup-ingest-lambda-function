@@ -74,7 +74,8 @@ BEGIN
                        NULLIF(btrim(d.dependent_locality::text), ''),
                        NULLIF(btrim(asd.administrative_area::text), ''),
                        NULLIF(btrim(d.po_box_number::text), ''),
-                       NULLIF(btrim(d.organisation_name::text), '')],
+                       NULLIF(btrim(d.organisation_name::text), ''),
+                       NULLIF(regexp_replace(d.postcode::text, '[ \\t]+'::text, ' '::text), '')],
                    ' '::text))                                                                                 AS address_lookup_ft_col
     FROM abp_delivery_point d
              JOIN abp_blpu b ON b.uprn = d.uprn
