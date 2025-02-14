@@ -1,0 +1,11 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  AddressLookupFileIngestorLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: AddressLookupFileIngestorLambda
+      Runtime: java8.al2
+      Handler: lambdas.AddressLookupFileIngestorLambdaFunction
+      CodeUri: target/scala-2.12/address-lookup-file-ingest-lambda-functions_2.12-1.1.jar
