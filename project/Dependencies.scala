@@ -5,7 +5,7 @@ object Dependencies {
   val doobieVersion = "0.7.1"
 
   val compile: Seq[ModuleID] = Seq(
-    "com.amazonaws"                      % "aws-lambda-java-core" % "1.1.0",
+    "com.amazonaws"                      % "aws-lambda-java-core" % "1.2.3",
     "me.lamouri"                         % "jcredstash"           % "2.1.1",
     "com.lihaoyi"                       %% "os-lib"               % "0.7.1",
     "com.fasterxml.jackson.core"         % "jackson-core"         % jacksonVersion,
@@ -19,7 +19,7 @@ object Dependencies {
 )
 
   val test: Seq[ModuleID] = Seq(
-    "org.scalatest"         %% "scalatest"          % "3.2.2"   % Test,
-    "org.scalatestplus"      % "mockito-3-4_2.12"   % "3.1.3.0" % Test
+    "org.scalatest"         %% "scalatest"          % "3.2.19"   % Test,
+    "org.scalatestplus"      % "mockito-3-4_2.12"   % "3.2.10.0" % Test
   )
 }
