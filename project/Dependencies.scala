@@ -15,7 +15,9 @@ object Dependencies {
     "org.tpolecat"                      %% "doobie-hikari"        % doobieVersion,
     "org.tpolecat"                      %% "doobie-postgres"      % doobieVersion,
     "ch.qos.logback"                     % "logback-core"         % "1.2.3",
-    "org.slf4j"                          % "slf4j-simple"         % "1.7.30"
+    "org.slf4j"                          % "slf4j-simple"         % "1.7.30",
+    "javax.xml.bind"                     % "jaxb-api"             % "2.3.1",
+    "org.glassfish.jaxb"                 % "jaxb-runtime"         % "2.3.1"
 )
 
   val test: Seq[ModuleID] = Seq(
