@@ -1,0 +1,64 @@
+class globals {
+
+    static git_application_service_name = 'address-lookup-ingest-lambda-function'
+    static git_application_repo = 'address-lookup-ingest-lambda-function'
+    static deployment_template_repo = 'cip-paas-deployment-template'
+    static git_tooling_repo = 'devops-tooling'
+
+}
+
+pipeline {
+    agent { label 'commonagent' }
+
+    environment {
+        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
+        PATH = "/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH"
+        JDK_FILE_NAME = 'openjdk-jre-17.0.13+11.tgz'
+        JAVA_VERSION = '17.0.13+11'
+    }
+
+    stages {
+        stage('get code') {
+            steps {
+                echo "Branch commit: ${env.ghprbActualCommit ?: 'Not Set'}"
+                echo "Git commit parameter: ${params.gitCommit ?: 'Not Set'}"
+                dir(globals.git_application_repo) {
+                    checkout([
+                            $class           : 'GitSCM',
+                            branches         : [[name: env.ghprbActualCommit ?: params.gitCommit ?: 'main']],
+                            userRemoteConfigs: [[
+                                                        url          : "https://github.com/hmrc/${globals.git_application_repo}.git",
+                                                        credentialsId: 'jenkins_infrastructure_githubhook_access_token']]
+                    ])
+                }
+                dir(globals.deployment_template_repo) {
+                    checkout([
+                            $class           : 'GitSCM',
+                            branches         : [[name: 'main']],
+                            userRemoteConfigs: [[
+                                                        url          : "https://github.com/hmrc/${globals.deployment_template_repo}.git",
+                                                        credentialsId: 'jenkins_infrastructure_githubhook_access_token']]
+                    ])
+                }
+                dir(globals.git_tooling_repo) {
+                    checkout([
+                            $class           : 'GitSCM',
+                            branches         : [[name: 'main']],
+                            userRemoteConfigs: [[
+                                                        url          : "https://github.com/hmrc/${globals.git_tooling_repo}.git",
+                                                        credentialsId: 'jenkins_infrastructure_githubhook_access_token']]
+                    ])
+                    sh 'make ci-pull/tf'
+                }
+
+            }
+        }
+        stage('unit tests') {
+            steps {
+                dir(globals.git_application_repo) {
+                    sh("make test")
+                }
+            }
+        }
+    }
+}
