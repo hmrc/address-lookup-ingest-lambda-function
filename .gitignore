@@ -17,3 +17,7 @@ tmp
 resources/csv/*.csv
 .bsp/
 null/
+.bloop/
+.metals/
+.tool-versions
+.envrc

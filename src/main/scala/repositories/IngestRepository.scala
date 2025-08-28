@@ -16,8 +16,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.io.Source
 
-
-class IngestRepository(transactor: => Transactor[IO], private val credentials: Credentials) {
+class IngestRepository(transactor: => Transactor[IO],
+                       private val credentials: Credentials) {
   private val logger = LoggerFactory.getLogger(classOf[IngestRepository])
 
   implicit val implicitTransactor: Transactor[IO] = transactor
@@ -44,19 +44,26 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
 
   def ingestFiles(schemaName: String, processDir: String): Future[Int] = {
     logger.info(s"Ingesting files in $processDir for schema $schemaName")
-    Future.sequence(
-      recordToFileNames.map {
+    Future
+      .sequence(recordToFileNames.map {
         case (t, f) => ingestFile(s"$schemaName.$t", s"$processDir/$f")
-      }
-    ).map(_.toList.size)
+      })
+      .map(_.toList.size)
   }
 
   def ingestFile(table: String, filePath: String): Future[Long] = {
     logger.info(s"Ingest file $filePath into table $table")
-    val in = Files.newInputStream(new File(filePath).toPath, StandardOpenOption.READ)
-    PHC.pgGetCopyAPI(
-      PFCM.copyIn(s"""COPY $table FROM STDIN WITH (FORMAT CSV, HEADER, DELIMITER ',');""", in)
-    ).transact(transactor).unsafeToFuture()
+    val in =
+      Files.newInputStream(new File(filePath).toPath, StandardOpenOption.READ)
+    PHC
+      .pgGetCopyAPI(
+        PFCM.copyIn(
+          s"""COPY $table FROM STDIN WITH (FORMAT CSV, HEADER, DELIMITER ',');""",
+          in
+        )
+      )
+      .transact(transactor)
+      .unsafeToFuture()
   }
 
   def initialiseSchema(epoch: String): Future[String] = {
@@ -86,17 +93,21 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   private def dropSchemas(schemas: List[String]): IO[Int] = {
     val sqlStringRes = resourceAsString("/create_db_drop_schema.sql")
 
-    schemas.map { schema =>
-      for {
-        sqlStr <- sqlStringRes
-        sql <- csql(sqlStr.replaceAll("__schema__", schema)).update.run.transact(transactor)
-      } yield sql
-    }.fold(IO(0)) {
-      case (ioa, iob) => for {
-        a <- ioa
-        b <- iob
-      } yield a + b
-    }
+    schemas
+      .map { schema =>
+        for {
+          sqlStr <- sqlStringRes
+          sql <- csql(sqlStr.replaceAll("__schema__", schema)).update.run
+            .transact(transactor)
+        } yield sql
+      }
+      .fold(IO(0)) {
+        case (ioa, iob) =>
+          for {
+            a <- ioa
+            b <- iob
+          } yield a + b
+      }
   }
 
   private val timestampFormat = DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")
@@ -108,9 +119,7 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
 
   private def createSchema(epoch: String) = {
     val schemaName = schemaNameFor(epoch)
-    csql(s"CREATE SCHEMA IF NOT EXISTS $schemaName")
-      .update
-      .run
+    csql(s"CREATE SCHEMA IF NOT EXISTS $schemaName").update.run
       .transact(transactor)
       .map(_ => schemaName)
   }
@@ -134,16 +143,16 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
 
   private def insertNewSchemaStatus(schemaName: String): IO[Int] = {
     sql"""INSERT INTO public.address_lookup_status(schema_name, status, timestamp)
-         | VALUES($schemaName, 'schema_created', NOW())""".stripMargin
-      .update
-      .run
+         | VALUES($schemaName, 'schema_created', NOW())""".stripMargin.update.run
       .transact(transactor)
   }
 
   def createLookupView(schemaName: String): Future[(Int, Int)] = {
     logger.info(s"Creating lookup view in schema $schemaName")
     (for {
-      cfsqlt <- resourceAsString("/create_db_lookup_view_and_indexes_function.sql")
+      cfsqlt <- resourceAsString(
+        "/create_db_lookup_view_and_indexes_function.sql"
+      )
       cfsql = cfsqlt.replaceAll("__schema__", schemaName)
       icfsqlt <- resourceAsString("/create_db_invoke_lookup_view_function.sql")
       icfsql = icfsqlt.replaceAll("__schema__", schemaName)
@@ -152,8 +161,26 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
     } yield (f, v)).unsafeToFuture()
   }
 
+  def createCombinedLookupView(schemaName: String): Future[(Int, Int)] = {
+    logger.info(s"Creating combined lookup view in schema $schemaName")
+    (for {
+      cfsqlt <- resourceAsString(
+        "/create_db_lookup_combined_view_and_indexes_function.sql"
+      )
+      cfsql = cfsqlt.replaceAll("__schema__", schemaName)
+      icfsqlt <- resourceAsString(
+        "/create_db_invoke_lookup_combined_view_function.sql"
+      )
+      icfsql = icfsqlt.replaceAll("__schema__", schemaName)
+      f <- csql(cfsql).update.run.transact(transactor)
+      v <- csql(icfsql).update.run.transact(transactor)
+    } yield (f, v)).unsafeToFuture()
+  }
+
   def checkIfLookupViewCreated(schemaName: String): Future[Boolean] = {
-    logger.info(s"Checking if lookup view has been created in schema $schemaName")
+    logger.info(
+      s"Checking if lookup view has been created in schema $schemaName"
+    )
 
     (for {
       sqlt <- resourceAsString("/check_lookup_view_created.sql")
@@ -162,7 +189,9 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
     } yield created).unsafeToFuture()
   }
 
-  def checkLookupViewStatus(schemaName: String): Future[(String, Option[String])] = {
+  def checkLookupViewStatus(
+    schemaName: String
+  ): Future[(String, Option[String])] = {
     logger.info(s"Checking status of schema $schemaName")
     sql"""SELECT status, error_message
          | FROM   public.address_lookup_status
@@ -185,7 +214,8 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
     } yield ok
   }
 
-  private def switchAddressLookupViewToNew(proceed: Boolean, schemaName: String): Future[Int] = {
+  private def switchAddressLookupViewToNew(proceed: Boolean,
+                                           schemaName: String): Future[Int] = {
     if (!proceed) Future.successful(0)
 
     resourceAsString("/create_db_switch_public_view.sql")
@@ -194,31 +224,32 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
       .unsafeToFuture()
   }
 
-  private def cleanupOldEpochDirectories(proceed: Boolean, epoch: String): Unit = {
+  private def cleanupOldEpochDirectories(proceed: Boolean,
+                                         epoch: String): Unit = {
     if (proceed) {
       os.walk(
-        path = os.Path(rootDir),
-        skip = p => p.baseName == epoch,
-        maxDepth = 1
-      ).filter(_.toIO.isDirectory).foreach(os.remove.all)
+          path = os.Path(rootDir),
+          skip = p => p.baseName == epoch,
+          maxDepth = 1
+        )
+        .filter(_.toIO.isDirectory)
+        .foreach(os.remove.all)
     }
   }
 
   private def cleanupProcessedCsvs(proceed: Boolean, epoch: String): Unit = {
     if (proceed) {
       val epochDir = os.Path(rootDir) / epoch
-      os.walk(
-        path = epochDir,
-        skip = p => {
-          val pn = p.toIO.getName
-          pn.endsWith(".csv") || pn == "processed.done"
-        },
-        maxDepth = 1
-      )
+      os.walk(path = epochDir, skip = p => {
+        val pn = p.toIO.getName
+        pn.endsWith(".csv") || pn == "processed.done"
+      }, maxDepth = 1)
     }
   }
 
-  private def getSchemaStatus(schemaName: String): Future[(String, Option[String])] = {
+  private def getSchemaStatus(
+    schemaName: String
+  ): Future[(String, Option[String])] = {
     sql"""SELECT status, error_message
          | FROM  public.address_lookup_status
          | WHERE schema_name = $schemaName""".stripMargin
@@ -228,20 +259,31 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
       .unsafeToFuture()
   }
 
-  private def isNewSchemaWithinChangeTolerance(latestSchemaName: String): Future[Boolean] = {
+  private def isNewSchemaWithinChangeTolerance(
+    latestSchemaName: String
+  ): Future[Boolean] = {
     getSchemaToCompare(latestSchemaName).flatMap {
       case Some(previousSchemaName) =>
-        toleranceChecker.withinTolerance(latestSchemaName, previousSchemaName, 0.3)
-      case None                     => Future.successful(true)
+        toleranceChecker.withinTolerance(
+          latestSchemaName,
+          previousSchemaName,
+          0.3
+        )
+      case None => Future.successful(true)
     }
   }
 
   private def getCount(schemaName: String): Future[Int] = {
     csql(s"SELECT COUNT(*) FROM ${schemaName}.abp_street_descriptor;")
-      .query[Int].unique.transact(transactor).unsafeToFuture()
+      .query[Int]
+      .unique
+      .transact(transactor)
+      .unsafeToFuture()
   }
 
-  private def getSchemaToCompare(latestSchemaName: String): Future[Option[String]] = {
+  private def getSchemaToCompare(
+    latestSchemaName: String
+  ): Future[Option[String]] = {
     sql"""SELECT schema_name
          | FROM   public.address_lookup_status
          | WHERE status = 'finalised'
@@ -255,8 +297,10 @@ class IngestRepository(transactor: => Transactor[IO], private val credentials: C
   }
 
   private def resourceAsString(name: String): IO[String] = {
-    Resource.make[IO, Source](
-      IO(Source.fromURL(getClass.getResource(name), "utf-8")))(s => IO(s.close()))
+    Resource
+      .make[IO, Source](
+        IO(Source.fromURL(getClass.getResource(name), "utf-8"))
+      )(s => IO(s.close()))
       .use(s => IO(s.mkString))
   }
 }
