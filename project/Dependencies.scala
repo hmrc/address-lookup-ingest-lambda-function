@@ -1,27 +1,27 @@
 import sbt._
 
 object Dependencies {
-  val jacksonVersion = "2.9.7"
-  val doobieVersion = "0.7.1"
+  val jacksonVersion = "3.0.3"
+  val doobieVersion = "1.0.0-RC11"
 
   val compile: Seq[ModuleID] = Seq(
-    "com.amazonaws"                      % "aws-lambda-java-core" % "1.2.3",
+    "com.amazonaws"                      % "aws-lambda-java-core" % "1.4.0",
     "me.lamouri"                         % "jcredstash"           % "2.1.1",
-    "com.lihaoyi"                       %% "os-lib"               % "0.7.1",
-    "com.fasterxml.jackson.core"         % "jackson-core"         % jacksonVersion,
-    "com.fasterxml.jackson.core"         % "jackson-databind"     % jacksonVersion,
-    "com.fasterxml.jackson.core"         % "jackson-annotations"  % jacksonVersion,
+    "com.lihaoyi"                       %% "os-lib"               % "0.11.6",
+    "tools.jackson.core"                 % "jackson-core"         % jacksonVersion,
+    "tools.jackson.core"                 % "jackson-databind"     % jacksonVersion,
+    "com.fasterxml.jackson.core"         % "jackson-annotations"  % "2.20",
     "org.tpolecat"                      %% "doobie-core"          % doobieVersion,
     "org.tpolecat"                      %% "doobie-hikari"        % doobieVersion,
     "org.tpolecat"                      %% "doobie-postgres"      % doobieVersion,
-    "ch.qos.logback"                     % "logback-core"         % "1.2.3",
-    "org.slf4j"                          % "slf4j-simple"         % "1.7.30",
-    "javax.xml.bind"                     % "jaxb-api"             % "2.3.1",
-    "org.glassfish.jaxb"                 % "jaxb-runtime"         % "2.3.1"
+    "ch.qos.logback"                     % "logback-core"         % "1.5.21",
+    "org.slf4j"                          % "slf4j-simple"         % "2.0.17",
+    "jakarta.xml.bind"                   % "jakarta.xml.bind-api" % "4.0.4",
+    "org.glassfish.jaxb"                 % "jaxb-runtime"         % "4.0.6"
 )
 
   val test: Seq[ModuleID] = Seq(
-    "org.scalatest"         %% "scalatest"          % "3.2.19"   % Test,
-    "org.scalatestplus"      % "mockito-3-4_2.12"   % "3.2.10.0" % Test
+    "org.scalatest"                     %% "scalatest"            % "3.2.19" % Test,
+    "org.scalatestplus"                 %% "mockito-5-12"         % "3.2.19.0" % Test
   )
 }

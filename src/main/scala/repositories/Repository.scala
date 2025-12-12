@@ -1,11 +1,11 @@
 package repositories
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import doobie.Transactor
 import me.lamouri.JCredStash
 
 import java.util
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -27,29 +27,23 @@ object Repository {
     )
   }
 
-  private def adminXa(creds: Credentials): Transactor[IO] = {
-    implicit val cs: ContextShift[IO] =
-      IO.contextShift(implicitly[ExecutionContext])
-
+  private def adminXa(creds: Credentials): Transactor[IO] =
     Transactor.fromDriverManager[IO](
       "org.postgresql.Driver",
       s"jdbc:postgresql://${creds.host}:${creds.port}/${creds.database}",
       creds.admin,
-      creds.adminPassword
+      creds.adminPassword,
+      None
     )
-  }
 
-  private def ingestorXa(creds: Credentials): Transactor[IO] = {
-    implicit val cs: ContextShift[IO] =
-      IO.contextShift(implicitly[ExecutionContext])
-
+  private def ingestorXa(creds: Credentials): Transactor[IO] =
     Transactor.fromDriverManager[IO](
       "org.postgresql.Driver",
       s"jdbc:postgresql://${creds.host}:${creds.port}/${creds.database}",
       creds.admin,
-      creds.adminPassword
+      creds.adminPassword,
+      None
     )
-  }
 
   sealed trait Credentials {
     def host: String

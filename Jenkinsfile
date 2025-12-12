@@ -4,11 +4,10 @@ pipeline {
       label 'commonagent'
   }
   environment {
-    // Use Java 11 (needed after Jenkins upgrade)
-    JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
-    PATH = "/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH"
-    JDK_FILE_NAME = 'openjdk-jre-17.0.13+11.tgz'
-    JAVA_VERSION = '17.0.13+11'
+    JAVA_HOME = '/usr/lib/jvm/openjdk-jdk-21.0.1+12-LTS'
+    PATH = "/usr/lib/jvm/openjdk-jdk-21.0.1+12-LTS/bin:${env.PATH}"
+    JDK_FILE_NAME = 'openjdk-jdk-21.0.1+12-LTS.tgz'
+    JAVA_VERSION = '21.0.1_12'
   }
 
   stages {
