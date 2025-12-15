@@ -1,12 +1,12 @@
-TARGET_PATH := target/scala-2.12
-ARTIFACT := address-lookup-file-ingest-lambda-functions_2.12-1.2
+TARGET_PATH := target/scala-3.3.7
+ARTIFACT := address-lookup-file-ingest-lambda-functions_3-2.0.0
 
 test:
 	sbt test
 
 build:
 	sbt clean test assembly
-	cd target/scala-2.12; openssl dgst -sha256 -binary $(ARTIFACT).jar | openssl enc -base64 > $(ARTIFACT).base64sha256
+	cd ${TARGET_PATH}; openssl dgst -sha256 -binary $(ARTIFACT).jar | openssl enc -base64 > $(ARTIFACT).base64sha256
 
 push-s3:
 	aws s3 cp $(TARGET_PATH)/$(ARTIFACT).jar s3://$(S3_BUCKET)/$(ARTIFACT).jar --acl=bucket-owner-full-control

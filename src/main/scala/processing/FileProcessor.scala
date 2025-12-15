@@ -2,9 +2,8 @@ package processing
 
 import java.io.{File, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Path, Paths}
-import java.util.stream.Collectors
 import java.util.zip.ZipInputStream
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 
 class FileProcessor() extends FileOps {
 
@@ -15,7 +14,7 @@ class FileProcessor() extends FileOps {
   }
 
   private def batchFiles(dataRootDir: String): Map[File, List[Path]] = {
-    import implicits._
+    import implicits.*
 
     Files.walk(Paths.get(dataRootDir), 1)
       .filter(_.toFile.isFile)
@@ -36,19 +35,21 @@ class FileProcessor() extends FileOps {
             batchDir -> batchFilePath
           }
       }.groupBy(x => x._1)
+      .view
       .mapValues(x => x.map(_._2))
+      .toMap
   }
 
   private def unzipFileTo(fileName: String, outputDir: String): (File, List[File]) = {
-    import implicits._
+    import implicits.*
     val zin = new ZipInputStream(new FileInputStream(new File(fileName)))
     val outputDirectory = new File(outputDir).ensureDirsExist()
 
-    val result = Stream.continually(zin.getNextEntry).takeWhile(_ != null).map { file =>
+    val result = LazyList.continually(zin.getNextEntry).takeWhile(_ != null).map { file =>
       val foutf = new File(outputDirectory, file.getName)
       val fout = new FileOutputStream(foutf)
       val buffer = new Array[Byte](1024)
-      Stream
+      LazyList
         .continually(zin.read(buffer))
         .takeWhile(_ != -1)
         .foreach(fout.write(buffer, 0, _))

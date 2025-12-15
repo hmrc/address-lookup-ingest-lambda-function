@@ -21,6 +21,7 @@ import doobie._
 import doobie.implicits._
 import org.slf4j.LoggerFactory
 import repositories.Repository.Credentials
+import cats.effect.unsafe.implicits.global
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId}

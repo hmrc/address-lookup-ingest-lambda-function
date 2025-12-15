@@ -7,6 +7,7 @@ import doobie.postgres._
 import doobie.util.fragment.Fragment.{const => csql}
 import org.slf4j.LoggerFactory
 import repositories.Repository.Credentials
+import cats.effect.unsafe.implicits.global
 
 import java.io.File
 import java.nio.file.{Files, StandardOpenOption}
