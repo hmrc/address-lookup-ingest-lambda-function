@@ -1,4 +1,4 @@
-val appVersion = "2.0.0"
+val appVersion = "2.1.0"
 
 ThisBuild / version := appVersion
 ThisBuild / scalaVersion := "3.3.7"

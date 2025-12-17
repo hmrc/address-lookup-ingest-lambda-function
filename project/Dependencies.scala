@@ -16,8 +16,12 @@ object Dependencies {
     "org.tpolecat"                      %% "doobie-postgres"      % doobieVersion,
     "ch.qos.logback"                     % "logback-core"         % "1.5.21",
     "org.slf4j"                          % "slf4j-simple"         % "2.0.17",
-    "jakarta.xml.bind"                   % "jakarta.xml.bind-api" % "4.0.4",
-    "org.glassfish.jaxb"                 % "jaxb-runtime"         % "4.0.6"
+
+    //Legacy JAXB dependencies required for Java 11+ compatibility:
+    //  These are AWS SDK v1 dependency that are transitively required for jcredstash
+    //   We will move away from jcredstash in future so these can be removed, and use Secrets Manager instead
+    "javax.xml.bind"                     % "jaxb-api"             % "2.3.1",
+    "org.glassfish.jaxb"                 % "jaxb-runtime"         % "2.3.1"
 )
 
   val test: Seq[ModuleID] = Seq(
