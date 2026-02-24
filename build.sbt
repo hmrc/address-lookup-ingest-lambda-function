@@ -16,5 +16,6 @@ ThisBuild / assemblyMergeStrategy := {
 
 lazy val lambda = Project("address-lookup-file-ingest-lambda-functions", file("."))
   .settings(
-    libraryDependencies ++= Dependencies.compile ++ Dependencies.test
+    libraryDependencies ++= Dependencies.compile ++ Dependencies.test,
+    excludeDependencies ++= Dependencies.excludeDependencies
   )
