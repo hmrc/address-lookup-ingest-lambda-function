@@ -6,7 +6,9 @@ object Dependencies {
 
   val compile: Seq[ModuleID] = Seq(
     "com.amazonaws"                      % "aws-lambda-java-core" % "1.4.0",
+    "com.amazonaws.secretsmanager"       % "aws-secretsmanager-caching-java"  % "2.1.0",
     "me.lamouri"                         % "jcredstash"           % "2.1.1",
+    "org.playframework"                 %% "play-json"            % "3.0.6",
     "com.lihaoyi"                       %% "os-lib"               % "0.11.6",
     "tools.jackson.core"                 % "jackson-core"         % jacksonVersion,
     "tools.jackson.core"                 % "jackson-databind"     % jacksonVersion,

@@ -1,8 +1,12 @@
 package repositories
 
 import cats.effect.IO
+import com.amazonaws.secretsmanager.caching.SecretCache
 import doobie.Transactor
 import me.lamouri.JCredStash
+import services.SecretsManagerService
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 
 import java.util
 import scala.jdk.CollectionConverters.*
@@ -74,32 +78,23 @@ object Repository {
   }
 
   final class RdsCredentials() extends Credentials {
-    private val credStashPrefix = sys.env.getOrElse("CREDSTASH_PREFIX", "")
-
-    private val credstashTableName = "credential-store"
-    private val context: util.Map[String, String] =
-      Map("role" -> "cip_address_search").asJava
-
-    private val lookupContext: util.Map[String, String] =
-      Map("role" -> "address_lookup_file_download").asJava
+    private val awsClientBuilder: SecretsManagerClient = SecretsManagerClient
+      .builder()
+      .region(Region.EU_WEST_2)
+      .build()
+    private val secretsManagerService = new SecretsManagerService(new SecretCache(awsClientBuilder))
 
     private def retrieveCredentials(
-      credential: String,
-      context: util.Map[String, String] = context
+      credential: String
     ) = {
-      val credStash = new JCredStash()
-      credStash.getSecret(credstashTableName, credential, context).trim
+      secretsManagerService.getSecret("rds/cip-address-search-api-rds-cluster/root", credential)
     }
 
-    override def host: String =
-      retrieveCredentials(s"address_search_rds_rw_host")
+    override def host: String = "address_search_rds_rw_host"
     override def port: String = "5432"
-    override def database: String =
-      retrieveCredentials(s"address_search_rds_database")
-    override def admin: String =
-      retrieveCredentials(s"address_search_rds_admin_user")
-    override def adminPassword: String =
-      retrieveCredentials(s"address_search_rds_admin_password")
+    override def database: String = "addressbasepremium"
+    override def admin: String = retrieveCredentials("user")
+    override def adminPassword: String = retrieveCredentials("password")
     override def csvBaseDir: String = "/mnt/efs/"
   }
 }
