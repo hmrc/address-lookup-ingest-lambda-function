@@ -6,13 +6,10 @@ object Dependencies {
 
   val compile: Seq[ModuleID] = Seq(
     "com.amazonaws"                      % "aws-lambda-java-core" % "1.4.0",
-    "com.amazonaws.secretsmanager"       % "aws-secretsmanager-caching-java"  % "2.1.1",
+    "com.amazonaws.secretsmanager"       % "aws-secretsmanager-caching-java"  % "2.1.0",
     "me.lamouri"                         % "jcredstash"           % "2.1.1",
     "org.playframework"                 %% "play-json"            % "3.0.6",
     "com.lihaoyi"                       %% "os-lib"               % "0.11.6",
-    "tools.jackson.core"                 % "jackson-core"         % jacksonVersion,
-    "tools.jackson.core"                 % "jackson-databind"     % jacksonVersion,
-    "com.fasterxml.jackson.core"         % "jackson-annotations"  % "2.20",
     "org.tpolecat"                      %% "doobie-core"          % doobieVersion,
     "org.tpolecat"                      %% "doobie-hikari"        % doobieVersion,
     "org.tpolecat"                      %% "doobie-postgres"      % doobieVersion,
@@ -24,11 +21,6 @@ object Dependencies {
     //   We will move away from jcredstash in future so these can be removed, and use Secrets Manager instead
     "javax.xml.bind"                     % "jaxb-api"             % "2.3.1",
     "org.glassfish.jaxb"                 % "jaxb-runtime"         % "2.3.1"
-  )
-
-  val excludeDependencies = Seq(
-    ExclusionRule("com.amazonaws", "aws-java-sdk-s3"),
-    ExclusionRule("software.amazon.awssdk", "third-party-jackson-core")
   )
 
   val test: Seq[ModuleID] = Seq(
