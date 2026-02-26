@@ -90,7 +90,7 @@ object Repository {
       secretsManagerService.getSecret("rds/cip-address-search-api-rds-cluster/root", credential)
     }
 
-    override def host: String = "address_search_rds_rw_host"
+    override def host: String = "address_search_rds_host"
     override def port: String = "5432"
     override def database: String = "addressbasepremium"
     override def admin: String = retrieveCredentials("username")
