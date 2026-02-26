@@ -93,7 +93,7 @@ object Repository {
     override def host: String = "address_search_rds_rw_host"
     override def port: String = "5432"
     override def database: String = "addressbasepremium"
-    override def admin: String = retrieveCredentials("user")
+    override def admin: String = retrieveCredentials("username")
     override def adminPassword: String = retrieveCredentials("password")
     override def csvBaseDir: String = "/mnt/efs/"
   }
