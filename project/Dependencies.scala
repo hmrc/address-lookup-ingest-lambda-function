@@ -9,7 +9,7 @@ object Dependencies {
     "com.amazonaws.secretsmanager"       % "aws-secretsmanager-caching-java"  % "2.1.0",
     "me.lamouri"                         % "jcredstash"           % "2.1.1",
     "org.playframework"                 %% "play-json"            % "3.0.6",
-    "com.lihaoyi"                       %% "os-lib"               % "0.11.6",
+    "com.lihaoyi"                       %% "os-lib"               % "0.11.8",
     "org.tpolecat"                      %% "doobie-core"          % doobieVersion,
     "org.tpolecat"                      %% "doobie-hikari"        % doobieVersion,
     "org.tpolecat"                      %% "doobie-postgres"      % doobieVersion,

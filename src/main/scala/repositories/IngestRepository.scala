@@ -1,24 +1,28 @@
 package repositories
 
+import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
-import doobie._
-import doobie.implicits._
-import doobie.postgres._
-import doobie.util.fragment.Fragment.{const => csql}
+import doobie.*
+import doobie.implicits.*
+import doobie.postgres.*
+import doobie.util.fragment.Fragment.const as csql
 import org.slf4j.LoggerFactory
 import repositories.Repository.Credentials
-import cats.effect.unsafe.implicits.global
+import utils.FileUtils
 
 import java.io.File
-import java.nio.file.{Files, StandardOpenOption}
+import java.nio.file.{Files, NoSuchFileException, StandardOpenOption}
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.*
 import scala.io.Source
+import scala.util.Try
 
 class IngestRepository(transactor: => Transactor[IO],
-                       private val credentials: Credentials) {
+                       private val credentials: Credentials) extends FileUtils {
+  
   private val logger = LoggerFactory.getLogger(classOf[IngestRepository])
 
   implicit val implicitTransactor: Transactor[IO] = transactor
@@ -31,7 +35,7 @@ class IngestRepository(transactor: => Transactor[IO],
   }
 
   // Does this belong here???
-  val recordToFileNames = Map(
+  private val recordToFileNames = Map(
     "abp_blpu" -> "ID21_BLPU_Records.csv",
     "abp_delivery_point" -> "ID28_DPA_Records.csv",
     "abp_lpi" -> "ID24_LPI_Records.csv",
@@ -52,7 +56,7 @@ class IngestRepository(transactor: => Transactor[IO],
       .map(_.toList.size)
   }
 
-  def ingestFile(table: String, filePath: String): Future[Long] = {
+  private def ingestFile(table: String, filePath: String): Future[Long] = {
     logger.info(s"Ingest file $filePath into table $table")
     val in =
       Files.newInputStream(new File(filePath).toPath, StandardOpenOption.READ)
@@ -234,10 +238,10 @@ class IngestRepository(transactor: => Transactor[IO],
           maxDepth = 1
         )
         .filter(_.toIO.isDirectory)
-        .foreach(os.remove.all)
+        .foreach(removeDirectoryWithRetry)
     }
   }
-
+    
   private def cleanupProcessedCsvs(proceed: Boolean, epoch: String): Unit = {
     if (proceed) {
       val epochDir = os.Path(rootDir) / epoch
@@ -275,7 +279,7 @@ class IngestRepository(transactor: => Transactor[IO],
   }
 
   private def getCount(schemaName: String): Future[Int] = {
-    csql(s"SELECT COUNT(*) FROM ${schemaName}.abp_street_descriptor;")
+    csql(s"SELECT COUNT(*) FROM $schemaName.abp_street_descriptor;")
       .query[Int]
       .unique
       .transact(transactor)
